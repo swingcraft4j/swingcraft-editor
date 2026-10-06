@@ -9,6 +9,8 @@ import com.swingcraft4j.code.theme.CodeThemes;
 import com.swingcraft4j.code.viewer.JCodeFindBar;
 import com.swingcraft4j.code.viewer.JCodeViewer;
 
+import javax.swing.BorderFactory;
+import javax.swing.Box;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
@@ -97,6 +99,7 @@ public final class DemoApp {
 
         JToolBar toolBar = new JToolBar();
         toolBar.setFloatable(false);
+        toolBar.setBorder(BorderFactory.createEmptyBorder(DemoFonts.GAP, DemoFonts.GAP, DemoFonts.GAP, DemoFonts.GAP));
         toolBar.add(sample);
         toolBar.add(open);
         toolBar.add(big);
@@ -107,7 +110,9 @@ public final class DemoApp {
         toolBar.add(lineNumbers);
         toolBar.addSeparator();
         toolBar.add(languages);
+        toolBar.add(Box.createHorizontalStrut(DemoFonts.GAP));
         toolBar.add(themes);
+        DemoFonts.addTo(toolBar, viewer);
 
         frame.add(toolBar, BorderLayout.NORTH);
         frame.add(new JScrollPane(viewer), BorderLayout.CENTER);
@@ -117,7 +122,7 @@ public final class DemoApp {
         south.add(status, BorderLayout.SOUTH);
         frame.add(south, BorderLayout.SOUTH);
         frame.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
-        frame.setSize(1000, 700);
+        frame.setSize(1150, 700);
         frame.setLocationRelativeTo(null);
         frame.setVisible(true);
 

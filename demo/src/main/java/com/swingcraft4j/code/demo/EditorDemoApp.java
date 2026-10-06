@@ -16,6 +16,8 @@ import com.swingcraft4j.code.theme.CodeTheme;
 import com.swingcraft4j.code.theme.CodeThemes;
 import com.swingcraft4j.code.viewer.JCodeFindBar;
 
+import javax.swing.BorderFactory;
+import javax.swing.Box;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
@@ -112,6 +114,7 @@ public final class EditorDemoApp {
 
         JToolBar toolBar = new JToolBar();
         toolBar.setFloatable(false);
+        toolBar.setBorder(BorderFactory.createEmptyBorder(DemoFonts.GAP, DemoFonts.GAP, DemoFonts.GAP, DemoFonts.GAP));
         toolBar.add(open);
         toolBar.add(save);
         toolBar.add(big);
@@ -125,7 +128,9 @@ public final class EditorDemoApp {
         toolBar.add(readOnly);
         toolBar.addSeparator();
         toolBar.add(languages);
+        toolBar.add(Box.createHorizontalStrut(DemoFonts.GAP));
         toolBar.add(themes);
+        DemoFonts.addTo(toolBar, editor);
 
         editor.addSelectionListener(e -> showPosition());
         // a star in the title while there are changes that have not been saved
@@ -145,7 +150,7 @@ public final class EditorDemoApp {
         frame.add(new JScrollPane(editor), BorderLayout.CENTER);
         frame.add(south, BorderLayout.SOUTH);
         frame.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
-        frame.setSize(1000, 700);
+        frame.setSize(1150, 700);
         frame.setLocationRelativeTo(null);
         frame.setVisible(true);
 

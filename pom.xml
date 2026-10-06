@@ -22,6 +22,9 @@
         <junit.version>5.11.4</junit.version>
         <flatlaf.version>3.7.2</flatlaf.version>
         <flatlaf-fonts-roboto.version>2.137</flatlaf-fonts-roboto.version>
+        <flatlaf-fonts-roboto-mono.version>3.000</flatlaf-fonts-roboto-mono.version>
+        <flatlaf-fonts-inter.version>4.1</flatlaf-fonts-inter.version>
+        <flatlaf-fonts-jetbrains-mono.version>2.304</flatlaf-fonts-jetbrains-mono.version>
     </properties>
 
     <name>SwingCraft4j Code</name>
@@ -68,6 +71,21 @@
                 <groupId>com.formdev</groupId>
                 <artifactId>flatlaf-fonts-roboto</artifactId>
                 <version>${flatlaf-fonts-roboto.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.formdev</groupId>
+                <artifactId>flatlaf-fonts-roboto-mono</artifactId>
+                <version>${flatlaf-fonts-roboto-mono.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.formdev</groupId>
+                <artifactId>flatlaf-fonts-inter</artifactId>
+                <version>${flatlaf-fonts-inter.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.formdev</groupId>
+                <artifactId>flatlaf-fonts-jetbrains-mono</artifactId>
+                <version>${flatlaf-fonts-jetbrains-mono.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.junit.jupiter</groupId>
