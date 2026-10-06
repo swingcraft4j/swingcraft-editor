@@ -4,7 +4,7 @@ import com.swingcraft4j.code.lexer.Lexer;
 import com.swingcraft4j.code.lexer.TokenSink;
 import com.swingcraft4j.code.lexer.TokenType;
 
-/** Lexer for XML and HTML markup. */
+/** Lexer for XML, and for the markup of HTML. */
 public final class XmlLexer implements Lexer {
 
     private static final int TEXT = INITIAL_STATE;

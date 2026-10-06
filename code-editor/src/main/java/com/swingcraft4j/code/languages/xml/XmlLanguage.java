@@ -5,7 +5,7 @@ import com.swingcraft4j.code.lexer.Lexer;
 
 import java.util.List;
 
-/** XML, and HTML read as markup only: the contents of script and style elements are plain text. */
+/** XML. For HTML, with what is inside its script and style elements, there is {@code HtmlLanguage}. */
 public final class XmlLanguage implements Language {
 
     @Override
@@ -15,12 +15,12 @@ public final class XmlLanguage implements Language {
 
     @Override
     public String displayName() {
-        return "XML / HTML";
+        return "XML";
     }
 
     @Override
     public List<String> fileExtensions() {
-        return List.of("xml", "xsd", "xsl", "xslt", "svg", "fxml", "html", "htm", "xhtml");
+        return List.of("xml", "xsd", "xsl", "xslt", "svg", "fxml");
     }
 
     @Override

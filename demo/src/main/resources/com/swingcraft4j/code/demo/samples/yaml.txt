@@ -1,0 +1,39 @@
+# The build of the warehouse application
+---
+name: Build and test
+on:
+  push:
+    branches: [main, "release/*"]
+  pull_request: ~
+
+env:
+  JAVA_VERSION: 21
+  REGISTRY: ghcr.io/example/warehouse   # the image goes here
+
+defaults: &defaults
+  runs-on: ubuntu-latest
+  timeout-minutes: 15
+
+jobs:
+  build:
+    <<: *defaults
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up the JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: ${{ env.JAVA_VERSION }}
+          cache: maven
+      - name: Build
+        run: |
+          ./mvnw --no-transfer-progress verify
+          echo "Built version $(./mvnw help:evaluate -q -DforceStdout)"
+      - name: Publish
+        if: github.ref == 'refs/heads/main'
+        run: docker push "$REGISTRY:latest"
+    services:
+      database: !!map
+        image: postgres:16
+        ports: ["5432:5432"]
+        enabled: yes

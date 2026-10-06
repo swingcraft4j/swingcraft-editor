@@ -23,19 +23,26 @@ its comments are written.
 | `env`        | Env        | `env`, as in `.env`                      |
 | `go`         | Go         | `go`                                     |
 | `groovy`     | Groovy     | `groovy`, `gradle`, `gvy`                |
+| `html`       | HTML       | `html`, `htm`, `xhtml`                   |
 | `ini`        | INI        | `ini`, `cfg`                             |
 | `java`       | Java       | `java`                                   |
 | `javascript` | JavaScript | `js`, `mjs`, `cjs`, `jsx`                |
 | `typescript` | TypeScript | `ts`, `tsx`, `mts`, `cts`                |
 | `json`       | JSON       | `json`, `jsonc`, `json5`                 |
 | `kotlin`     | Kotlin     | `kt`, `kts`                              |
+| `markdown`   | Markdown   | `md`, `markdown`                         |
 | `php`        | PHP        | `php`, `phtml`                           |
 | `properties` | Properties | `properties`                             |
 | `python`     | Python     | `py`, `pyw`, `pyi`                       |
 | `rust`       | Rust       | `rs`                                     |
+| `shell`      | Shell      | `sh`, `bash`, `zsh`, `ksh`               |
 | `sql`        | SQL        | `sql`, `ddl`, `dml`                      |
 | `toml`       | TOML       | `toml`                                   |
-| `xml`        | XML / HTML | `xml`, `html`, `htm`, `svg` and others   |
+| `xml`        | XML        | `xml`, `xsd`, `xsl`, `xslt`, `svg`, `fxml` |
+| `yaml`       | YAML       | `yaml`, `yml`                            |
+
+HTML reads what is inside its `script` elements as JavaScript and what is inside its `style` elements as CSS.
+Markdown reads the code of a fenced block in the language the fence names, where that is one of these.
 
 `Languages.forFileName` goes by the extension. A name without a dot is looked up as it is, so `Dockerfile`
 finds its language.
@@ -116,8 +123,8 @@ editor.setLanguage(script);
 ```
 
 The new language has the id and the name of the one it started from; `id(String)` and `displayName(String)`
-of the builder set others. The languages that come with the library are rule languages, all but Java and
-XML.
+of the builder set others. The languages that come with the library are rule languages, all but Java, HTML,
+Markdown and XML.
 
 ## Syntax laid over a language
 

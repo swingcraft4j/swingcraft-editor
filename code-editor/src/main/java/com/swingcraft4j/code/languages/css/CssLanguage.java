@@ -23,8 +23,9 @@ public final class CssLanguage extends RuleLanguage {
                 .pattern(TokenType.NUMBER, "#[0-9a-fA-F]{3,8}\\b")
                 // a custom property, where it is declared and where it is used
                 .pattern(TokenType.VARIABLE, "--[\\w-]+")
-                // a name followed by a colon and a value that ends on the line
-                .pattern(TokenType.ATTRIBUTE, "[\\w-]+(?=\\s*:[^{]*(?:;|}|$))")
+                // a name followed by a colon and a value that ends on the line; not a part of a selector, as
+                // the item of ".item:hover," is, which has a dot before it and a comma at its end
+                .pattern(TokenType.ATTRIBUTE, "(?<![.#:\\w-])[\\w-]+(?=[ \\t]*:[^{;}]*(?:[;}]|(?<=[^,\\s{])[ \\t]*$))")
                 .literals("inherit", "initial", "unset", "revert", "none", "auto")
                 .detectFunctions()
                 .operators(":>+~*=")

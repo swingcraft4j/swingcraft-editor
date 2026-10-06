@@ -30,16 +30,20 @@ class LanguagesTest {
 
     @Test
     void findsEveryLanguageByFileName() {
-        assertEquals(List.of("c", "cpp", "csharp", "css", "dockerfile", "env", "go", "groovy", "ini", "java", "javascript",
-                        "typescript", "json", "kotlin", "php", "properties", "python", "rust", "sql", "toml", "xml"),
+        assertEquals(List.of("c", "cpp", "csharp", "css", "dockerfile", "env", "go", "groovy", "html", "ini", "java", "javascript",
+                        "typescript", "json", "kotlin", "markdown", "php", "properties", "python", "rust", "shell", "sql", "toml", "xml", "yaml"),
                 Languages.installed().stream().map(Language::id).toList());
         assertEquals("xml", Languages.forFileName("pom.xml").orElseThrow().id());
-        assertEquals("xml", Languages.forFileName("index.HTML").orElseThrow().id());
+        assertEquals("html", Languages.forFileName("index.HTML").orElseThrow().id());
+        assertEquals("xml", Languages.forFileName("icon.svg").orElseThrow().id());
+        assertEquals("markdown", Languages.forFileName("README.md").orElseThrow().id());
         assertEquals("typescript", Languages.forFileName("app.component.ts").orElseThrow().id());
         assertEquals("python", Languages.forFileName("setup.py").orElseThrow().id());
         assertEquals("groovy", Languages.forFileName("build.gradle").orElseThrow().id());
         assertEquals("cpp", Languages.forFileName("item.hpp").orElseThrow().id());
         assertEquals("env", Languages.forFileName(".env").orElseThrow().id());
+        assertEquals("yaml", Languages.forFileName("docker-compose.yml").orElseThrow().id());
+        assertEquals("shell", Languages.forFileName("deploy.sh").orElseThrow().id());
         // a name without a dot is looked up as it is
         assertEquals("dockerfile", Languages.forFileName("Dockerfile").orElseThrow().id());
         assertTrue(Languages.forFileName("notes.unknown").isEmpty());
@@ -120,6 +124,95 @@ class LanguagesTest {
         assertEquals("KEYWORD:export | ATTRIBUTE:API_TOKEN | OPERATOR:= | IDENTIFIER:abc123#not-a-comment | COMMENT:# this is one",
                 line("env", "export API_TOKEN=abc123#not-a-comment   # this is one"));
         assertEquals("ATTRIBUTE:URL | OPERATOR:= | VARIABLE:${HOST} | IDENTIFIER:: | VARIABLE:$PORT", line("env", "URL=${HOST}:$PORT"));
+    }
+
+    /** The tokens of the lines of a document, each line joined. */
+    private static List<String> lines(String languageId, String... lines) {
+        return lex(languageId, lines).stream().map(tokens -> String.join(" | ", tokens)).toList();
+    }
+
+    @Test
+    void htmlReadsItsScriptsAsJavaScriptAndItsStylesAsCss() {
+        assertEquals(List.of(
+                        // a script within a line, which ends at its closing tag and not before
+                        "PUNCTUATION:< | TAG:p | ATTRIBUTE:class | OPERATOR:= | STRING:\"a\" | PUNCTUATION:> | PUNCTUATION:</ | TAG:p"
+                                + " | PUNCTUATION:> | PUNCTUATION:< | TAG:script | PUNCTUATION:> | KEYWORD:let | IDENTIFIER:a | OPERATOR:="
+                                + " | STRING:\"</b>\" | PUNCTUATION:; | PUNCTUATION:</ | TAG:script | PUNCTUATION:> | PUNCTUATION:<"
+                                + " | TAG:b | PUNCTUATION:>",
+                        "PUNCTUATION:< | TAG:style | PUNCTUATION:> | IDENTIFIER:a | PUNCTUATION:{ | ATTRIBUTE:color | OPERATOR::"
+                                + " | IDENTIFIER:red | PUNCTUATION:}",
+                        // the style goes on over the lines
+                        "PUNCTUATION:. | IDENTIFIER:b | OPERATOR:: | IDENTIFIER:hover | PUNCTUATION:,",
+                        // the opening tag of a script may run over lines too
+                        "PUNCTUATION:</ | TAG:style | PUNCTUATION:> | PUNCTUATION:< | TAG:script",
+                        "ATTRIBUTE:src | OPERATOR:= | STRING:\"x.js\" | PUNCTUATION:>",
+                        "KEYWORD:var | IDENTIFIER:x | OPERATOR:= | NUMBER:1 | PUNCTUATION:; | COMMENT:/* c",
+                        // a comment of the script carried over, and the markup after the script
+                        "COMMENT:*/ | FUNCTION:f | PUNCTUATION:( | PUNCTUATION:) | PUNCTUATION:; | PUNCTUATION:</ | TAG:SCRIPT"
+                                + " | PUNCTUATION:> | LITERAL:&amp;",
+                        // a script closed in its own tag has nothing inside
+                        "PUNCTUATION:< | TAG:script | PUNCTUATION:/ | PUNCTUATION:> | PUNCTUATION:< | TAG:i | PUNCTUATION:>"),
+                lines("html", "<p class=\"a\">x</p><script>let a = \"</b>\";</script><b>", "<style>a { color: red }", ".b:hover,",
+                        "</style><script", " src=\"x.js\">", "var x = 1; /* c", "*/ f();</SCRIPT> y &amp; z", "<script/><i>"));
+    }
+
+    @Test
+    void markdown() {
+        assertEquals(List.of(
+                        "KEYWORD:## Title",
+                        "NUMBER:- | NUMBER:[x] | CONSTANT:**bold** | ANNOTATION:_it_ | STRING:`code` | ATTRIBUTE:[a] | LITERAL:(b)",
+                        // the code of a fence is read in the language it names, with the state of that language
+                        "COMMENT:``` | TYPE:js",
+                        "KEYWORD:const | IDENTIFIER:a | OPERATOR:= | STRING:`x",
+                        "STRING:${b}` | PUNCTUATION:;",
+                        "COMMENT:```",
+                        "NUMBER:1. | TAG:<b> | TAG:</b> | LITERAL:<https://a.b> | LITERAL:http://c.d",
+                        "COMMENT:<!-- a",
+                        "COMMENT:b --> | ANNOTATION:*i*",
+                        "KEYWORD:===",
+                        "ATTRIBUTE:[id]: | LITERAL:http://x",
+                        // a fence is closed only by one like it: the backticks are text here
+                        "COMMENT:~~~~",
+                        "STRING:```",
+                        "COMMENT:~~~~",
+                        ""),
+                lines("markdown", "## Title", "- [x] **bold** and _it_ `code` [a](b) snake_case", "```js", "const a = `x", "${b}`;",
+                        "```", "1. <b>x</b> <https://a.b> http://c.d. \\*no\\*", "<!-- a", "b --> *i*", "===", "[id]: http://x",
+                        "~~~~", "```", "~~~~", "    # not a heading"));
+    }
+
+    @Test
+    void yaml() {
+        // yes and no are values only on their own, not as words of a text
+        assertEquals("ATTRIBUTE:name | OPERATOR:: | IDENTIFIER:Turn | IDENTIFIER:on | IDENTIFIER:the | IDENTIFIER:light | COMMENT:# no",
+                line("yaml", "name: Turn on the light # no"));
+        assertEquals("OPERATOR:- | ATTRIBUTE:enabled | OPERATOR:: | LITERAL:Yes", line("yaml", "  - enabled: Yes"));
+        assertEquals("ATTRIBUTE:list | OPERATOR:: | PUNCTUATION:[ | LITERAL:true | PUNCTUATION:, | IDENTIFIER:a | PUNCTUATION:,"
+                        + " | LITERAL:~ | PUNCTUATION:]",
+                line("yaml", "list: [true, a, ~]"));
+        // a colon and a # inside a value are a part of it
+        assertEquals("ATTRIBUTE:base | OPERATOR:: | ANNOTATION:&base | PUNCTUATION:{ | ATTRIBUTE:url | OPERATOR::"
+                        + " | IDENTIFIER:http://x/#top | PUNCTUATION:, | ATTRIBUTE:\"a b\" | OPERATOR:: | STRING:'c' | PUNCTUATION:}",
+                line("yaml", "base: &base {url: http://x/#top, \"a b\": 'c'}"));
+        assertEquals("ATTRIBUTE:<< | OPERATOR:: | ANNOTATION:*base", line("yaml", "<<: *base"));
+        assertEquals("PREPROCESSOR:---", line("yaml", "---"));
+        assertEquals("ATTRIBUTE:date | OPERATOR:: | TYPE:!!timestamp | NUMBER:2024-03-01", line("yaml", "date: !!timestamp 2024-03-01"));
+    }
+
+    @Test
+    void shell() {
+        assertEquals("PREPROCESSOR:#!/bin/sh", line("shell", "#!/bin/sh"));
+        assertEquals("ATTRIBUTE:NAME | OPERATOR:= | VARIABLE:${1:-x} | COMMENT:# set", line("shell", "NAME=${1:-x} # set"));
+        // $# is a variable and a#b a word: neither starts a comment
+        assertEquals("KEYWORD:if | PUNCTUATION:[ | ATTRIBUTE:-f | STRING:\"$f\" | PUNCTUATION:] | OPERATOR:; | KEYWORD:then"
+                        + " | FUNCTION:echo | VARIABLE:$# | IDENTIFIER:a#b | OPERATOR:; | KEYWORD:fi",
+                line("shell", "if [ -f \"$f\" ]; then echo $# a#b; fi"));
+        assertEquals("IDENTIFIER:-sources.jar | PUNCTUATION:) | IDENTIFIER:cp | ATTRIBUTE:-r | IDENTIFIER:./a | STRING:'b'"
+                        + " | OPERATOR:; | OPERATOR:;",
+                line("shell", "*-sources.jar) cp -r ./a 'b' ;;"));
+        assertEquals("FUNCTION:log | PUNCTUATION:( | PUNCTUATION:) | PUNCTUATION:{ | FUNCTION:printf | STRING:'%s' | STRING:\"$@\""
+                        + " | OPERATOR:; | PUNCTUATION:}",
+                line("shell", "log() { printf '%s' \"$@\"; }"));
     }
 
     @Test

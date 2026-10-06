@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>Warehouse &amp; Inventory</title>
+    <!-- the colours of the page -->
+    <style>
+        :root { --accent: #0969da; }
+
+        .item:hover,
+        .item.selected {
+            color: var(--accent);
+            border-bottom: 1px solid #d0d7de;
+        }
+    </style>
+</head>
+<body>
+    <h1 class="title">Items in stock</h1>
+    <ul id="items" data-count="2">
+        <li class="item selected">Bolt <em>x 120</em></li>
+        <li class="item">Nut <em>x 300</em></li>
+    </ul>
+    <button type="button" onclick="refresh()">Refresh</button>
+
+    <script type="module"
+            src="vendor.js"></script>
+    <script>
+        const items = document.querySelectorAll("#items .item");
+
+        // counts what is on the page
+        function refresh() {
+            const total = items.length;
+            console.log(`There are ${total} items`, total > 1);
+        }
+
+        document.addEventListener("DOMContentLoaded", refresh);
+    </script>
+</body>
+</html>

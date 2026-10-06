@@ -1,0 +1,46 @@
+# Warehouse Inventory
+
+Keeps track of the **items** in a *warehouse*, with `quantity` and price.
+See the [user guide](docs/guide.md) or <https://example.com/warehouse>.
+
+## Installation
+
+1. Download the [latest release][release]
+2. Unpack it, then run `./warehouse --port 8080`
+3. Open http://localhost:8080 in a browser.
+
+> The first start creates the database, which takes a moment.
+
+### To do
+
+- [x] Import items from a ***CSV*** file
+- [ ] Export the stock as PDF
+- A snake_case_name stays as it is, and so does 2 * 3 * 4
+
+```java
+public record Item(String name, int quantity, double price) {
+
+    // what the stock of the item is worth
+    double value() {
+        return quantity * price;
+    }
+}
+```
+
+~~~yaml
+database:
+  host: localhost   # the default
+  port: 5432
+~~~
+
+```
+plain text in a fence without a language
+```
+
+<!-- the links of this page
+     are kept down here -->
+---
+
+[release]: https://example.com/warehouse/releases "Releases"
+
+Made with <b>care</b> by __Raven__.

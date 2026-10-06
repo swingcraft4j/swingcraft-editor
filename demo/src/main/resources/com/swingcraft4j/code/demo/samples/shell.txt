@@ -1,0 +1,32 @@
+#!/usr/bin/env bash
+# Builds the warehouse application and copies it to the server
+set -euo pipefail
+
+APP_NAME="warehouse"
+VERSION=${1:-1.4.2}
+TARGET_DIR="$HOME/deploy/$APP_NAME"
+
+log() {
+    echo "[$(date +%H:%M:%S)] $*"
+}
+
+build() {
+    log "Building $APP_NAME $VERSION"
+    ./mvnw --no-transfer-progress package -DskipTests
+}
+
+if [ ! -d "$TARGET_DIR" ]; then
+    mkdir -p "$TARGET_DIR"
+fi
+
+build || { log 'The build failed'; exit 1; }
+
+for jar in target/*.jar; do
+    case "$jar" in
+        *-sources.jar) continue ;;
+        *) cp "$jar" "$TARGET_DIR/" ;;
+    esac
+done
+
+count=$(ls "$TARGET_DIR" | wc -l)
+log "Copied $count files, exit code was $?"

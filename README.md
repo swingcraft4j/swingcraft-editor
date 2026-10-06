@@ -20,8 +20,10 @@ Website: https://www.swingcraft4j.com
 
 ## Features
 
-- Syntax highlighting for 21 languages, and for your own: C, C++, C#, CSS, Dockerfile, Env, Go, Groovy, INI,
-  Java, JavaScript, TypeScript, JSON, Kotlin, PHP, Properties, Python, Rust, SQL, TOML, and XML with HTML
+- Syntax highlighting for 25 languages, and for your own: C, C++, C#, CSS, Dockerfile, Env, Go, Groovy, HTML,
+  INI, Java, JavaScript, TypeScript, JSON, Kotlin, Markdown, PHP, Properties, Python, Rust, Shell, SQL, TOML,
+  XML and YAML
+- CSS and JavaScript highlighted inside HTML, and the code of a fenced block inside Markdown
 - Line wrap, at any char or at words
 - Line numbers, code folding and matching brackets
 - Find, with match case, whole word and regular expression, and go to line
