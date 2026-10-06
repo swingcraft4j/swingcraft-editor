@@ -64,7 +64,7 @@ links without being written as one.
 
 The preview is a `JEditorPane`, and shows the page with the HTML that Swing knows. That sets its limits:
 
-- the box of a task is a char, not a check box, and cannot be clicked
+- the box of a task is drawn by the preview, and cannot be clicked; copied as text, it is the char ☑ or ☐
 - a quote is set in and greyed, without a line at its side
 - HTML written in the Markdown is shown as far as Swing knows the tags, and only the tags of text, lists,
   tables, links and images: any other, such as a form, a script or an object, is shown as the text it is
@@ -88,6 +88,9 @@ without one, is shown plain.
 preview.setCodeTheme(CodeThemes.dracula());                   // the colours of the code
 preview.setCodeFont(new Font(Font.MONOSPACED, Font.PLAIN, 13)); // the font of the code
 ```
+
+The background of a code block, and of code in a line, has round corners; the preview paints it itself, as
+it does the box of a task.
 
 Without a theme, the code has the light or the dark theme, by the look and feel. A preview that follows an
 editor takes both from the editor.

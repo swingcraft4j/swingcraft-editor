@@ -49,6 +49,14 @@ public class JMarkdownPreview extends JEditorPane {
     private boolean openLinks = true;
     /** Set once the fields are there: the Look and Feel is installed before, from the constructor of the superclass. */
     private final boolean ready;
+    /** Set while the Look and Feel is installed: it sets its font before the preview has a caret again. */
+    private boolean installing;
+
+    /** What the views of the page paint themselves, in the colours of the last time it was rendered. */
+    Color codeBackground;
+    Color blockBackground;
+    Color boxBorder;
+    Color boxFill;
 
     private JCodeEditor followed;
     private final Timer followTimer = new Timer(FOLLOW_DELAY, e -> showFollowed());
@@ -56,7 +64,8 @@ public class JMarkdownPreview extends JEditorPane {
     private final PropertyChangeListener editorListener = e -> followTimer.restart();
 
     public JMarkdownPreview() {
-        setContentType("text/html");
+        // the HTML of Swing, with what it cannot show painted by views of the preview
+        setEditorKit(new MarkdownViews.Kit());
         setEditable(false);
         // the font of the component is the font of the text, not the one HTML has by default
         putClientProperty(HONOR_DISPLAY_PROPERTIES, Boolean.TRUE);
@@ -202,7 +211,7 @@ public class JMarkdownPreview extends JEditorPane {
     @Override
     public void setFont(Font font) {
         super.setFont(font);
-        if (ready) {
+        if (ready && !installing) {
             render();
         }
     }
@@ -210,7 +219,12 @@ public class JMarkdownPreview extends JEditorPane {
     /** Also takes the colours and the font of the new Look and Feel. */
     @Override
     public void updateUI() {
-        super.updateUI();
+        installing = true;
+        try {
+            super.updateUI();
+        } finally {
+            installing = false;
+        }
         if (ready) {
             render();
         }
@@ -262,16 +276,19 @@ public class JMarkdownPreview extends JEditorPane {
         styles.addRule("a { color: " + MarkdownHtml.hex(link) + "; }");
         styles.addRule("ul, ol { margin-top: 0px; margin-bottom: 8px; margin-left: 22px; }");
         styles.addRule("blockquote { color: " + MarkdownHtml.hex(quiet) + "; margin-left: 12px; margin-top: 0px; margin-bottom: 8px; }");
+        // The backgrounds of code have round corners, which a style sheet of Swing has not: the views paint them.
+        codeBackground = mix(background, foreground, 0.08f);
+        boxBorder = quiet;
+        boxFill = color("Component.accentColor", link);
         // code in a line has the size of the text around it, which Swing has to be told for each kind of text
-        styles.addRule("code { " + codeFamily + " font-size: " + size + "pt; color: " + MarkdownHtml.hex(theme.foreground())
-                + "; background-color: " + MarkdownHtml.hex(mix(background, foreground, 0.08f)) + "; }");
+        styles.addRule("code { " + codeFamily + " font-size: " + size + "pt; color: " + MarkdownHtml.hex(theme.foreground()) + "; }");
         styles.addRule("h1 code { font-size: " + Math.round(size * 2f) + "pt; }");
         styles.addRule("h2 code { font-size: " + Math.round(size * 1.5f) + "pt; }");
         styles.addRule("h3 code { font-size: " + Math.round(size * 1.25f) + "pt; }");
         // a code block has the background of the code theme, unless that is the one of the page: then it would not show
-        Color block = isNear(theme.background(), background) ? mix(background, foreground, 0.05f) : theme.background();
-        styles.addRule("pre { " + codeFamily + " font-size: " + code.getSize() + "pt; color: " + MarkdownHtml.hex(theme.foreground()) + "; background-color: "
-                + MarkdownHtml.hex(block) + "; padding: 8px; margin-top: 0px; margin-bottom: 10px; }");
+        blockBackground = isNear(theme.background(), background) ? mix(background, foreground, 0.05f) : theme.background();
+        styles.addRule("pre { " + codeFamily + " font-size: " + code.getSize() + "pt; color: " + MarkdownHtml.hex(theme.foreground())
+                + "; padding: 8px; margin-top: 0px; margin-bottom: " + MarkdownViews.BLOCK_MARGIN_BOTTOM + "px; }");
         // the background of a table shows between its cells, as its lines
         styles.addRule("table { background-color: " + MarkdownHtml.hex(border) + "; margin-bottom: 10px; }");
         styles.addRule("td { background-color: " + MarkdownHtml.hex(background) + "; }");

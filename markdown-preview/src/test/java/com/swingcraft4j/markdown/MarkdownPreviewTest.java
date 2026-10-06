@@ -6,7 +6,10 @@ import com.swingcraft4j.code.theme.CodeThemes;
 import org.junit.jupiter.api.Test;
 
 import javax.swing.JScrollPane;
+import javax.swing.LookAndFeel;
+import javax.swing.UIManager;
 import javax.swing.event.HyperlinkEvent;
+import javax.swing.plaf.nimbus.NimbusLookAndFeel;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -65,10 +68,26 @@ class MarkdownPreviewTest {
     }
 
     @Test
+    void takesAnotherLookAndFeel() throws Exception {
+        LookAndFeel before = UIManager.getLookAndFeel();
+        JMarkdownPreview preview = new JMarkdownPreview("# One\n\n- [x] done `code`");
+        try {
+            // the new Look and Feel sets its font while the preview has no caret
+            UIManager.setLookAndFeel(new NimbusLookAndFeel());
+            preview.updateUI();
+            assertTrue(preview.getText().contains("One"));
+            preview.setMarkdown("# Two");
+            assertTrue(preview.getText().contains("Two"));
+        } finally {
+            UIManager.setLookAndFeel(before);
+        }
+    }
+
+    @Test
     void rendersATaskListWithBoxesThatAreText() {
         String html = html("- [x] done\n- [ ] open");
-        assertTrue(html.contains("&#9745; done"), html);
-        assertTrue(html.contains("&#9744; open"), html);
+        assertTrue(html.contains("<span class=\"task-done\">&#9745;</span> done"), html);
+        assertTrue(html.contains("<span class=\"task-open\">&#9744;</span> open"), html);
         assertFalse(html.contains("<input"), html);
     }
 

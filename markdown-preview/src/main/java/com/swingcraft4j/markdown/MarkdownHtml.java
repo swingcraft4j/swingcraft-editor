@@ -120,7 +120,10 @@ final class MarkdownHtml {
         }
     }
 
-    /** The box of a task as a char: Swing would put a real check box there, which can be clicked and does nothing. */
+    /**
+     * The box of a task as a char, in a span by which the preview finds it and draws a box in its
+     * place: Swing would put a real check box there, which can be clicked and does nothing.
+     */
     private static final class TaskMarkerRenderer implements NodeRenderer {
 
         private final HtmlWriter html;
@@ -136,7 +139,9 @@ final class MarkdownHtml {
 
         @Override
         public void render(Node node) {
-            html.raw(((TaskListItemMarker) node).isChecked() ? "&#9745; " : "&#9744; ");
+            boolean done = ((TaskListItemMarker) node).isChecked();
+            html.raw("<span class=\"" + (done ? MarkdownViews.TASK_DONE : MarkdownViews.TASK_OPEN) + "\">"
+                    + (done ? "&#9745;" : "&#9744;") + "</span> ");
         }
     }
 
