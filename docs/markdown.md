@@ -66,7 +66,9 @@ The preview is a `JEditorPane`, and shows the page with the HTML that Swing know
 
 - the box of a task is a char, not a check box, and cannot be clicked
 - a quote is set in and greyed, without a line at its side
-- HTML written in the Markdown is shown as far as Swing knows the tags
+- HTML written in the Markdown is shown as far as Swing knows the tags, and only the tags of text, lists,
+  tables, links and images: any other, such as a form, a script or an object, is shown as the text it is
+- a line of code that is wider than the view makes the whole page wider, not its block alone
 
 ## Code blocks
 
@@ -92,8 +94,13 @@ editor takes both from the editor.
 
 ## Links and images
 
-A click on a link opens it in the browser of the user, if it is an address of the web or of mail. To do
-something else with a link, switch that off and add a listener:
+A link to a heading of the page, such as `[setup](#getting-started)`, scrolls to it. The id of a heading is
+its text in lower case with a dash for each blank and without its punctuation, as on GitHub: `whats-new` for
+"What's new?". Of two headings with the same text, the second has `-1` at its end, the third `-2`.
+`scrollToHeading("getting-started")` does the same from code, once the preview is shown.
+
+A click on any other link opens it in the browser of the user, if it is an address of the web or of mail. To
+do something else with a link, switch that off and add a listener:
 
 ```java
 preview.setOpenLinks(false);
@@ -114,7 +121,8 @@ preview.setBase(file.getParent().toUri().toURL());
 ## Colours and font
 
 The text has the font and the colours of the look and feel, and takes the new ones when the look and feel
-changes. `setFont` sets another font for the text, and `setCodeFont` one for the code. A preview that follows
+changes. `setFont` sets another font for the text, and `setCodeFont` one for the code: a code block has its
+size, and code in a line the size of the text around it, also in a heading. A preview that follows
 an editor takes only the font of its code from the editor; to give all of it the font of the editor:
 
 ```java

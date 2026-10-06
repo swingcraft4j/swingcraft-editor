@@ -10,9 +10,12 @@ import org.commonmark.ext.autolink.AutolinkExtension;
 import org.commonmark.ext.gfm.strikethrough.StrikethroughExtension;
 import org.commonmark.ext.gfm.tables.TableBlock;
 import org.commonmark.ext.gfm.tables.TablesExtension;
+import org.commonmark.ext.heading.anchor.HeadingAnchorExtension;
 import org.commonmark.ext.task.list.items.TaskListItemMarker;
 import org.commonmark.ext.task.list.items.TaskListItemsExtension;
 import org.commonmark.node.FencedCodeBlock;
+import org.commonmark.node.HtmlBlock;
+import org.commonmark.node.HtmlInline;
 import org.commonmark.node.IndentedCodeBlock;
 import org.commonmark.node.Node;
 import org.commonmark.parser.Parser;
@@ -23,7 +26,10 @@ import org.commonmark.renderer.html.HtmlWriter;
 import java.awt.Color;
 import java.awt.Font;
 import java.util.List;
+import java.util.Locale;
 import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * Turns Markdown into the HTML that a Swing text component can show: the HTML of its time, in
@@ -31,9 +37,20 @@ import java.util.Set;
  */
 final class MarkdownHtml {
 
-    // what GitHub has more than plain Markdown
+    // what GitHub has more than plain Markdown, and an id for each heading, which a link can lead to
     private static final List<Extension> EXTENSIONS = List.of(TablesExtension.create(), TaskListItemsExtension.create(),
-            StrikethroughExtension.create(), AutolinkExtension.create());
+            StrikethroughExtension.create(), AutolinkExtension.create(), HeadingAnchorExtension.create());
+
+    /**
+     * The tags of HTML written in the Markdown that are shown as HTML. Any other is shown as the
+     * text it is: Swing makes a real component of a form field, sends a form that is submitted,
+     * and creates an object of the class an {@code object} tag names.
+     */
+    private static final Set<String> SAFE_TAGS = Set.of("a", "b", "big", "blockquote", "br", "center", "code", "dd", "del",
+            "details", "div", "dl", "dt", "em", "font", "h1", "h2", "h3", "h4", "h5", "h6", "hr", "i", "img", "kbd", "li", "ol",
+            "p", "pre", "s", "samp", "small", "span", "strike", "strong", "sub", "summary", "sup", "table", "tbody", "td", "th",
+            "thead", "tr", "tt", "u", "ul", "var");
+    private static final Pattern TAG = Pattern.compile("</?([A-Za-z][A-Za-z0-9]*)[^<>]*>?");
     private static final Parser PARSER = Parser.builder().extensions(EXTENSIONS).build();
 
     private MarkdownHtml() {
@@ -48,6 +65,7 @@ final class MarkdownHtml {
         HtmlRenderer renderer = HtmlRenderer.builder()
                 .nodeRendererFactory(context -> new CodeBlockRenderer(context.getWriter(), theme))
                 .nodeRendererFactory(context -> new TaskMarkerRenderer(context.getWriter()))
+                .nodeRendererFactory(context -> new HtmlTagRenderer(context.getWriter()))
                 .attributeProviderFactory(context -> (node, tagName, attributes) -> {
                     if (node instanceof TableBlock) {
                         // The lines of a table are the gaps between its cells, through which its own
@@ -120,6 +138,45 @@ final class MarkdownHtml {
         public void render(Node node) {
             html.raw(((TaskListItemMarker) node).isChecked() ? "&#9745; " : "&#9744; ");
         }
+    }
+
+    /** HTML written in the Markdown, with only the tags that are safe to show left as tags. */
+    private static final class HtmlTagRenderer implements NodeRenderer {
+
+        private final HtmlWriter html;
+
+        HtmlTagRenderer(HtmlWriter html) {
+            this.html = html;
+        }
+
+        @Override
+        public Set<Class<? extends Node>> getNodeTypes() {
+            return Set.of(HtmlBlock.class, HtmlInline.class);
+        }
+
+        @Override
+        public void render(Node node) {
+            boolean block = node instanceof HtmlBlock;
+            String literal = block ? ((HtmlBlock) node).getLiteral() : ((HtmlInline) node).getLiteral();
+            if (block) {
+                html.line();
+            }
+            html.raw(safe(literal));
+            if (block) {
+                html.line();
+            }
+        }
+    }
+
+    /** The HTML with every tag that is not one of the safe ones turned into the text it is written as. */
+    static String safe(String literal) {
+        Matcher matcher = TAG.matcher(literal);
+        StringBuilder result = new StringBuilder(literal.length());
+        while (matcher.find()) {
+            boolean keep = SAFE_TAGS.contains(matcher.group(1).toLowerCase(Locale.ROOT));
+            matcher.appendReplacement(result, Matcher.quoteReplacement(keep ? matcher.group() : escape(matcher.group())));
+        }
+        return matcher.appendTail(result).toString();
     }
 
     /** The code as HTML, each token in the colour and the style the theme gives its type. */

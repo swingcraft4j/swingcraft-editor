@@ -10,6 +10,8 @@ import javax.swing.Timer;
 import javax.swing.UIManager;
 import javax.swing.event.ChangeListener;
 import javax.swing.event.HyperlinkEvent;
+import javax.swing.text.BadLocationException;
+import javax.swing.text.Element;
 import javax.swing.text.html.HTMLDocument;
 import javax.swing.text.html.HTMLEditorKit;
 import javax.swing.text.html.StyleSheet;
@@ -17,6 +19,8 @@ import java.awt.Color;
 import java.awt.Desktop;
 import java.awt.Font;
 import java.awt.Point;
+import java.awt.Rectangle;
+import java.awt.geom.Rectangle2D;
 import java.beans.PropertyChangeListener;
 import java.net.URI;
 import java.net.URL;
@@ -58,7 +62,13 @@ public class JMarkdownPreview extends JEditorPane {
         putClientProperty(HONOR_DISPLAY_PROPERTIES, Boolean.TRUE);
         followTimer.setRepeats(false);
         addHyperlinkListener(event -> {
-            if (openLinks && event.getEventType() == HyperlinkEvent.EventType.ACTIVATED) {
+            if (event.getEventType() != HyperlinkEvent.EventType.ACTIVATED) {
+                return;
+            }
+            String address = event.getDescription();
+            if (address != null && address.startsWith("#")) {
+                scrollToHeading(address.substring(1));
+            } else if (openLinks) {
                 open(event);
             }
         });
@@ -97,7 +107,10 @@ public class JMarkdownPreview extends JEditorPane {
         return codeFont != null ? codeFont : new Font(Font.MONOSPACED, Font.PLAIN, getFont().getSize());
     }
 
-    /** Sets the font of the code, in the lines and in the code blocks; null goes back to the monospaced font. */
+    /**
+     * Sets the font of the code; null goes back to the monospaced font. A code block has the size
+     * of this font, and code in a line the size of the text around it.
+     */
     public void setCodeFont(Font codeFont) {
         this.codeFont = codeFont;
         render();
@@ -120,6 +133,32 @@ public class JMarkdownPreview extends JEditorPane {
     public void setBase(URL base) {
         ((HTMLDocument) getDocument()).setBase(base);
         render();
+    }
+
+    /**
+     * Scrolls to the heading with the id, which is its text in lower case with a dash for each
+     * blank: {@code getting-started} for "Getting started". A link to {@code #getting-started}
+     * does this when it is clicked. Nothing is scrolled before the preview is laid out.
+     *
+     * @return whether there is such a heading
+     */
+    public boolean scrollToHeading(String id) {
+        Element heading = ((HTMLDocument) getDocument()).getElement(id);
+        if (heading == null) {
+            return false;
+        }
+        try {
+            Rectangle2D place = modelToView2D(heading.getStartOffset());
+            if (place != null) {
+                // to the top of the view, not just into it
+                Rectangle target = place.getBounds();
+                target.height = getVisibleRect().height;
+                scrollRectToVisible(target);
+            }
+        } catch (BadLocationException e) {
+            // the heading is in the document, so its offset is too
+        }
+        return true;
     }
 
     /** The editor whose text is shown, or null. */
@@ -211,7 +250,7 @@ public class JMarkdownPreview extends JEditorPane {
         Color quiet = color("Label.disabledForeground", Color.GRAY);
         Color border = color("Component.borderColor", Color.LIGHT_GRAY);
         Color link = color("Component.linkColor", new Color(0x0969DA));
-        String codeFamily = "font-family: '" + code.getFamily() + "'; font-size: " + code.getSize() + "pt;";
+        String codeFamily = "font-family: '" + code.getFamily() + "';";
 
         styles.addRule("body { font-family: '" + font.getFamily() + "'; font-size: " + size + "pt; color: "
                 + MarkdownHtml.hex(foreground) + "; background-color: " + MarkdownHtml.hex(background) + "; margin: 12px; }");
@@ -223,11 +262,15 @@ public class JMarkdownPreview extends JEditorPane {
         styles.addRule("a { color: " + MarkdownHtml.hex(link) + "; }");
         styles.addRule("ul, ol { margin-top: 0px; margin-bottom: 8px; margin-left: 22px; }");
         styles.addRule("blockquote { color: " + MarkdownHtml.hex(quiet) + "; margin-left: 12px; margin-top: 0px; margin-bottom: 8px; }");
-        styles.addRule("code { " + codeFamily + " color: " + MarkdownHtml.hex(theme.foreground()) + "; background-color: "
-                + MarkdownHtml.hex(mix(background, foreground, 0.08f)) + "; }");
+        // code in a line has the size of the text around it, which Swing has to be told for each kind of text
+        styles.addRule("code { " + codeFamily + " font-size: " + size + "pt; color: " + MarkdownHtml.hex(theme.foreground())
+                + "; background-color: " + MarkdownHtml.hex(mix(background, foreground, 0.08f)) + "; }");
+        styles.addRule("h1 code { font-size: " + Math.round(size * 2f) + "pt; }");
+        styles.addRule("h2 code { font-size: " + Math.round(size * 1.5f) + "pt; }");
+        styles.addRule("h3 code { font-size: " + Math.round(size * 1.25f) + "pt; }");
         // a code block has the background of the code theme, unless that is the one of the page: then it would not show
         Color block = isNear(theme.background(), background) ? mix(background, foreground, 0.05f) : theme.background();
-        styles.addRule("pre { " + codeFamily + " color: " + MarkdownHtml.hex(theme.foreground()) + "; background-color: "
+        styles.addRule("pre { " + codeFamily + " font-size: " + code.getSize() + "pt; color: " + MarkdownHtml.hex(theme.foreground()) + "; background-color: "
                 + MarkdownHtml.hex(block) + "; padding: 8px; margin-top: 0px; margin-bottom: 10px; }");
         // the background of a table shows between its cells, as its lines
         styles.addRule("table { background-color: " + MarkdownHtml.hex(border) + "; margin-bottom: 10px; }");

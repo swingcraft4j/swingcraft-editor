@@ -5,6 +5,9 @@ import com.swingcraft4j.code.theme.CodeTheme;
 import com.swingcraft4j.code.theme.CodeThemes;
 import org.junit.jupiter.api.Test;
 
+import javax.swing.JScrollPane;
+import javax.swing.event.HyperlinkEvent;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -17,11 +20,48 @@ class MarkdownPreviewTest {
 
     @Test
     void rendersTheTextOfAPage() {
-        assertEquals("<h1>Title</h1>\n<p>Some <strong>bold</strong> and <em>it</em> and <code>code</code>.</p>\n",
+        assertEquals("<h1 id=\"title\">Title</h1>\n<p>Some <strong>bold</strong> and <em>it</em> and <code>code</code>.</p>\n",
                 html("# Title\n\nSome **bold** and *it* and `code`."));
         assertTrue(html("[guide](docs/guide.md) and https://example.com").contains("<a href=\"https://example.com\">"),
                 "a bare address is a link");
         assertEquals("<p><strike>gone</strike></p>\n", html("~~gone~~"), "struck out the way Swing knows it");
+    }
+
+    @Test
+    void showsOnlyTheHtmlThatIsSafeAsHtml() {
+        assertEquals("<p>a <b>bold</b> and <kbd>Ctrl</kbd><br> and <span style=\"color:red\">red</span></p>\n",
+                html("a <b>bold</b> and <kbd>Ctrl</kbd><br> and <span style=\"color:red\">red</span>"));
+        // what Swing would make a component or an object of is shown as the text it is
+        String form = html("<form action=\"https://example.com\"><input type=\"submit\"></form>\n\n"
+                + "x <object classid=\"javax.swing.JButton\"></object> <script>alert(1)</script>");
+        assertFalse(form.contains("<form") || form.contains("<input") || form.contains("<object") || form.contains("<script"), form);
+        assertTrue(form.contains("&lt;form action=\"https://example.com\"&gt;"), form);
+        assertTrue(form.contains("&lt;object classid"), form);
+        assertEquals("a &lt;IFRAME src=x&gt; b <B>c</B> &lt;input", MarkdownHtml.safe("a <IFRAME src=x> b <B>c</B> <input"));
+    }
+
+    @Test
+    void scrollsToAHeadingByItsId() {
+        String filler = "text\n\n".repeat(60);
+        JMarkdownPreview preview = new JMarkdownPreview("# One\n\n" + filler + "## Getting started\n\n" + filler
+                + "## Getting started\n\n### What's `new` in 2.0?");
+        JScrollPane scrollPane = new JScrollPane(preview);
+        scrollPane.setSize(300, 200);
+        scrollPane.doLayout();
+        scrollPane.getViewport().doLayout();
+        preview.setSize(280, preview.getPreferredSize().height);
+
+        assertTrue(preview.scrollToHeading("getting-started"));
+        int first = scrollPane.getViewport().getViewPosition().y;
+        assertTrue(first > 0, "the heading is at the top of the view");
+        assertFalse(preview.scrollToHeading("nothing-like-it"));
+        assertEquals(first, scrollPane.getViewport().getViewPosition().y);
+
+        // a click on a link to a heading does the same, also when the other links are not opened
+        preview.setOpenLinks(false);
+        preview.fireHyperlinkUpdate(new HyperlinkEvent(preview, HyperlinkEvent.EventType.ACTIVATED, null, "#getting-started-1"));
+        assertTrue(scrollPane.getViewport().getViewPosition().y > first, "the second heading of that text");
+        assertTrue(preview.scrollToHeading("whats-new-in-20"), "an id is without the punctuation of its heading");
     }
 
     @Test

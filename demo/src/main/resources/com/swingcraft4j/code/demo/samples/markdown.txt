@@ -1,7 +1,7 @@
 # Warehouse Inventory
 
 Keeps track of the **items** in a *warehouse*, with `quantity` and price.
-See the [user guide](docs/guide.md) or <https://example.com/warehouse>.
+See the [user guide](docs/guide.md) or <https://example.com/warehouse>, or go on to [what is to do](#to-do).
 
 ## Installation
 
