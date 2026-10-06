@@ -50,9 +50,9 @@
     <scm child.scm.connection.inherit.append.path="false"
          child.scm.developerConnection.inherit.append.path="false"
          child.scm.url.inherit.append.path="false">
-        <connection>scm:git:git://github.com/swingcraft4j/swingcraft-code.git</connection>
-        <developerConnection>scm:git:ssh://git@github.com/swingcraft4j/swingcraft-code.git</developerConnection>
-        <url>https://github.com/swingcraft4j/swingcraft-code</url>
+        <connection>scm:git:git://github.com/swingcraft4j/swingcraft-editor.git</connection>
+        <developerConnection>scm:git:ssh://git@github.com/swingcraft4j/swingcraft-editor.git</developerConnection>
+        <url>https://github.com/swingcraft4j/swingcraft-editor</url>
     </scm>
 
     <dependencyManagement>
