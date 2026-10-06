@@ -1,0 +1,68 @@
+// Keeps track of the items in a warehouse.
+import { Injectable } from '@angular/core';
+
+export const MAX_ITEMS = 10_000;
+const TAX_RATE: number = 0.075;
+
+export interface Item {
+  readonly name: string;
+  quantity: number;
+  price: number;
+  tags?: string[];
+}
+
+type Summary = { count: number; value: number } | null;
+
+export enum Status {
+  Empty,
+  InStock,
+  Full,
+}
+
+/*
+ * A block comment
+ * spanning several lines.
+ */
+@Injectable({ providedIn: 'root' })
+export class Inventory implements Iterable<Item> {
+  private readonly items: Item[] = [];
+  public owner = "warehouse \"A\"";
+
+  add(item: Item): void {
+    if (this.items.length >= MAX_ITEMS) {
+      throw new Error('inventory is full: ' + this.items.length);
+    }
+    this.items.push(item); // keeps insertion order
+  }
+
+  get status(): Status {
+    return this.items.length === 0 ? Status.Empty : Status.InStock;
+  }
+
+  summary(): Summary {
+    if (this.items.length === 0) {
+      return null;
+    }
+    const value = this.items.reduce((sum, item) => sum + item.quantity * item.price * (1 + TAX_RATE), 0);
+    return { count: this.items.length, value };
+  }
+
+  describe(): string {
+    return `Inventory of ${this.owner}
+----------------
+${this.items.length} items`;
+  }
+
+  [Symbol.iterator](): Iterator<Item> {
+    return this.items[Symbol.iterator]();
+  }
+}
+
+export async function find<T extends Item>(source: Promise<T[]>, name: string): Promise<T | undefined> {
+  const items = await source;
+  return items.find((item) => item.name === name) as T | undefined;
+}
+
+declare namespace Warehouse {
+  function open(id: unknown): never;
+}

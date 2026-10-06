@@ -1,0 +1,44 @@
+@import url("reset.css");
+
+/* The colours of the page, light by default. */
+:root {
+    --background: #ffffff;
+    --text: #1f2328;
+    --accent: #0969da;
+    --radius: 6px;
+}
+
+@media (prefers-color-scheme: dark) {
+    :root {
+        --background: #1e1f22;
+        --text: #bcbec4;
+    }
+}
+
+body {
+    margin: 0;
+    font-family: "Inter", 'Segoe UI', sans-serif;
+    font-size: 14px;
+    line-height: 1.5;
+    color: var(--text);
+    background: var(--background);
+}
+
+a:hover,
+a:focus-visible {
+    color: var(--accent);
+    text-decoration: underline;
+}
+
+.card > .title::before {
+    content: "\2022";
+    margin-right: 0.5em;
+}
+
+#sidebar .item[data-state="open"] {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    padding: 8px 12px !important;
+    border-radius: var(--radius);
+    transition: opacity 150ms ease-in-out;
+}

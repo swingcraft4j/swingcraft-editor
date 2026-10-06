@@ -1,0 +1,65 @@
+package com.example.inventory;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Objects;
+
+/**
+ * Keeps track of the items in a warehouse.
+ * <p>
+ * This file is the Java sample of the viewer demo; it is never compiled.
+ */
+@SuppressWarnings("unused")
+public final class Inventory {
+
+    public static final int MAX_ITEMS = 10_000;
+    private static final double TAX_RATE = 0.075;
+    private static final long MASK = 0xFFFF_FFFFL;
+
+    private final List<Item> items = new ArrayList<>();
+    private String owner = "warehouse \"A\"";
+
+    /* A block comment
+       spanning two lines. */
+    public record Item(String name, int quantity, double price) {
+
+        public Item {
+            Objects.requireNonNull(name, "name");
+        }
+
+        double total() {
+            return quantity * price * (1 + TAX_RATE);
+        }
+    }
+
+    public void add(Item item) {
+        if (items.size() >= MAX_ITEMS) {
+            throw new IllegalStateException("inventory is full: " + items.size());
+        }
+        // TODO: reject an item whose name is already taken
+        items.add(item); // keeps insertion order
+    }
+
+    public double totalValue() {
+        double sum = 0;
+        for (Item item : items) {
+            sum += item.total();
+        }
+        return sum;
+    }
+
+    public String describe() {
+        char separator = '\t';
+        boolean empty = items.isEmpty();
+        String header = """
+                Inventory of %s
+                ----------------
+                """.formatted(owner);
+        return empty ? header + "(nothing)" : header + items.size() + separator + totalValue();
+    }
+
+	// This line is indented with a tab, and the next one is long enough to need wrapping in a narrow window.
+    public static final String LONG_TEXT = "The quick brown fox jumps over the lazy dog. Pack my box with five dozen liquor jugs. How vexingly quick daft zebras jump! Sphinx of black quartz, judge my vow.";
+
+    // Other scripts: ជំរាបសួរ, 你好世界, こんにちは, Привет, café
+}

@@ -1,0 +1,46 @@
+-- Keeps track of the items in a warehouse.
+
+CREATE TABLE warehouse (
+    id      SERIAL PRIMARY KEY,
+    name    VARCHAR(100) NOT NULL UNIQUE,
+    opened  DATE DEFAULT CURRENT_DATE
+);
+
+CREATE TABLE item (
+    id            BIGINT PRIMARY KEY,
+    warehouse_id  INT NOT NULL REFERENCES warehouse (id) ON DELETE CASCADE,
+    name          VARCHAR(200) NOT NULL,
+    quantity      INT DEFAULT 0 CHECK (quantity >= 0),
+    price         DECIMAL(10, 2),
+    fragile       BOOLEAN DEFAULT FALSE,
+    notes         TEXT
+);
+
+CREATE INDEX item_name ON item (name);
+
+/* A block comment
+   spanning two lines. */
+INSERT INTO warehouse (name) VALUES ('Warehouse "A"'), ('Raven''s depot');
+
+INSERT INTO item (id, warehouse_id, name, quantity, price)
+VALUES (1, 1, 'bolt', 1200, 0.12),
+       (2, 1, 'bracket', 85, 2.50),
+       (3, 2, 'motor', 4, 310.00);
+
+-- total value per warehouse, tax included
+SELECT w.name,
+       COUNT(*)                                AS items,
+       SUM(i.quantity * i.price * (1 + 0.075)) AS total_value
+FROM warehouse w
+         INNER JOIN item i ON i.warehouse_id = w.id
+WHERE i.quantity > 0
+  AND i.notes IS NULL
+  AND w.opened BETWEEN :since AND :until
+GROUP BY w.name
+HAVING COUNT(*) >= 2
+ORDER BY total_value DESC
+LIMIT 10;
+
+UPDATE item SET quantity = quantity - 1 WHERE id = @itemId AND fragile = FALSE;
+
+DELETE FROM item WHERE "name" LIKE 'old%' OR quantity = 0;

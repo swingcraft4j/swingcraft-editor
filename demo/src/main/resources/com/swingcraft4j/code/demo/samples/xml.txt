@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE inventory SYSTEM "inventory.dtd">
+<!--
+    Keeps track of the items in a warehouse.
+    This file is the XML sample of the viewer demo.
+-->
+<inventory xmlns="http://example.com/inventory"
+           xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+           owner='warehouse "A"'
+           maxItems="10000">
+
+    <limits taxRate="0.075" currency="USD"/>
+
+    <items>
+        <item id="1" fragile="false">
+            <name>bolt</name>
+            <quantity>1200</quantity>
+            <price>0.12</price>
+            <tags>
+                <tag>metal</tag>
+                <tag>small</tag>
+            </tags>
+        </item>
+        <item id="2">
+            <name>bracket &amp; screws</name>
+            <quantity>85</quantity>
+            <price>2.50</price>
+            <note xsi:nil="true"/>
+        </item>
+        <item id="3" fragile="true">
+            <name>motor &lt;electric&gt;</name>
+            <quantity>4</quantity>
+            <price>310.00</price>
+        </item>
+    </items>
+
+    <description><![CDATA[
+        Raw text: <not a tag> & not an entity.
+    ]]></description>
+
+    <longText>The quick brown fox jumps over the lazy dog. Pack my box with five dozen liquor jugs. How vexingly quick daft zebras jump! Sphinx of black quartz, judge my vow.</longText>
+</inventory>

@@ -1,0 +1,26 @@
+{
+  "name": "warehouse-inventory",
+  "version": "1.4.2",
+  "private": true,
+  "description": "Keeps track of the items in a warehouse \"A\".",
+  "owner": {
+    "name": "Raven",
+    "email": null,
+    "active": true
+  },
+  "limits": {
+    "maxItems": 10000,
+    "taxRate": 0.075,
+    "discount": -1.5e-3
+  },
+  "items": [
+    { "name": "bolt", "quantity": 1200, "price": 0.12, "tags": ["metal", "small"] },
+    { "name": "bracket", "quantity": 85, "price": 2.5, "tags": [] },
+    { "name": "motor", "quantity": 4, "price": 310.0, "tags": ["electric"], "fragile": false }
+  ],
+  "paths": {
+    "export": "C:\\warehouse\\export",
+    "unicode": "caf\u00e9"
+  },
+  "longText": "The quick brown fox jumps over the lazy dog. Pack my box with five dozen liquor jugs. How vexingly quick daft zebras jump! Sphinx of black quartz, judge my vow."
+}

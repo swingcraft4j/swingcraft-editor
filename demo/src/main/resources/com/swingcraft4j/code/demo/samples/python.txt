@@ -1,0 +1,58 @@
+"""Keeps track of the items in a warehouse.
+
+This file is the Python sample of the viewer demo.
+"""
+from dataclasses import dataclass, field
+from typing import Iterator, Optional
+
+MAX_ITEMS = 10_000
+TAX_RATE = 0.075
+MASK = 0xFFFF
+
+
+@dataclass(frozen=True)
+class Item:
+    name: str
+    quantity: int
+    price: float
+
+    def total(self) -> float:
+        return self.quantity * self.price * (1 + TAX_RATE)
+
+
+class Inventory:
+    '''A list of items
+    with an owner.'''
+
+    def __init__(self, owner: str = "warehouse \"A\"") -> None:
+        self.owner = owner
+        self._items: list[Item] = []
+
+    def add(self, item: Item) -> None:
+        if len(self._items) >= MAX_ITEMS:
+            raise OverflowError(f"inventory is full: {len(self._items)}")
+        self._items.append(item)  # keeps insertion order
+
+    @property
+    def total_value(self) -> float:
+        return sum(item.total() for item in self._items)
+
+    def find(self, name: str) -> Optional[Item]:
+        for item in self._items:
+            if item.name == name and item.quantity > 0:
+                return item
+        return None
+
+    def __iter__(self) -> Iterator[Item]:
+        yield from self._items
+
+    def describe(self) -> str:
+        empty = not self._items
+        header = 'Inventory of %s\n----------------\n' % self.owner
+        return header + ('(nothing)' if empty else f'{len(self._items)}\t{self.total_value:.2f}')
+
+
+if __name__ == '__main__':
+    inventory = Inventory()
+    inventory.add(Item('bolt', 1200, 0.12))
+    print(inventory.describe(), 1.5e-3, True)

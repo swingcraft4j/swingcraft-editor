@@ -1,0 +1,47 @@
+// Keeps track of the items in a warehouse.
+import { EventEmitter } from 'node:events';
+
+const MAX_ITEMS = 10_000;
+const TAX_RATE = 0.075;
+
+/*
+ * A block comment
+ * spanning several lines.
+ */
+export class Inventory extends EventEmitter {
+  #items = [];
+  owner = "warehouse \"A\"";
+
+  add(item) {
+    if (this.#items.length >= MAX_ITEMS) {
+      throw new Error('inventory is full: ' + this.#items.length);
+    }
+    this.#items.push(item); // keeps insertion order
+    this.emit('added', item);
+  }
+
+  get totalValue() {
+    return this.#items.reduce((sum, item) => sum + item.quantity * item.price * (1 + TAX_RATE), 0);
+  }
+
+  describe() {
+    const empty = this.#items.length === 0;
+    const header = `Inventory of ${this.owner}
+----------------
+`;
+    return empty ? header + '(nothing)' : header + this.#items.length + '\t' + this.totalValue;
+  }
+}
+
+async function loadInventory(url) {
+  const response = await fetch(url);
+  const data = response.ok ? await response.json() : null;
+  const inventory = new Inventory();
+  for (const $item of data?.items ?? []) {
+    inventory.add($item);
+  }
+  return inventory;
+}
+
+let found = undefined;
+var total = 0x1F + 1.5e-3 + NaN;

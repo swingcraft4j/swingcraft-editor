@@ -1,0 +1,8 @@
+com.swingcraft4j.code.languages.css.CssLanguage
+com.swingcraft4j.code.languages.java.JavaLanguage
+com.swingcraft4j.code.languages.javascript.JavaScriptLanguage
+com.swingcraft4j.code.languages.javascript.TypeScriptLanguage
+com.swingcraft4j.code.languages.json.JsonLanguage
+com.swingcraft4j.code.languages.python.PythonLanguage
+com.swingcraft4j.code.languages.sql.SqlLanguage
+com.swingcraft4j.code.languages.xml.XmlLanguage
