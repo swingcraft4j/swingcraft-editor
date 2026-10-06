@@ -1,0 +1,36 @@
+use std::collections::HashMap;
+use std::fmt;
+
+/// An item of the warehouse.
+#[derive(Debug, Clone)]
+pub struct Item<'a> {
+    name: &'a str,
+    quantity: u32,
+    price: f64,
+}
+
+impl<'a> Item<'a> {
+    pub fn value(&self) -> f64 {
+        f64::from(self.quantity) * self.price
+    }
+}
+
+impl fmt::Display for Item<'_> {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{} x {}", self.quantity, self.name)
+    }
+}
+
+fn main() {
+    let items = vec![
+        Item { name: "bolt", quantity: 120, price: 0.25 },
+        Item { name: "nut", quantity: 300, price: 0.1 },
+    ];
+    // the stock by the first letter of the name
+    let mut by_letter: HashMap<char, Vec<&Item>> = HashMap::new();
+    for item in &items {
+        by_letter.entry(item.name.chars().next().unwrap_or('?')).or_default().push(item);
+    }
+    let total: f64 = items.iter().map(Item::value).sum();
+    println!("Total: {total:.2} in {} groups", by_letter.len());
+}

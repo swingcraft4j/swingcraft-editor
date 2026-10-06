@@ -1,0 +1,28 @@
+package com.example.warehouse
+
+import java.time.LocalDate
+
+/** An item of the warehouse. */
+data class Item(val name: String, val quantity: Int, val price: Double) {
+    val value: Double
+        get() = quantity * price
+}
+
+sealed interface Stock {
+    data object Empty : Stock
+    data class Filled(val items: List<Item>, val checked: LocalDate) : Stock
+}
+
+fun total(stock: Stock): Double = when (stock) {
+    is Stock.Empty -> 0.0
+    is Stock.Filled -> stock.items.sumOf { it.value }
+}
+
+@Suppress("MagicNumber")
+fun main() {
+    val items = listOf(Item("bolt", 120, 0.25), Item("nut", 300, 0.1))
+    val stock: Stock = if (items.isEmpty()) Stock.Empty else Stock.Filled(items, LocalDate.now())
+    // the items that have to be ordered again
+    val low = items.filter { it.quantity < 200 }.joinToString { it.name }
+    println("Total: ${total(stock)}, low on $low")
+}

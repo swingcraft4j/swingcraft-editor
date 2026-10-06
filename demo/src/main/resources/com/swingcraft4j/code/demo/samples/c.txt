@@ -1,0 +1,26 @@
+#include <stdio.h>
+#include "inventory.h"
+
+#define MAX_ITEMS 64
+
+/* An item of the warehouse. */
+typedef struct {
+    const char *name;
+    int quantity;
+    double price;
+} Item;
+
+static double total_value(const Item *items, size_t count) {
+    double total = 0.0;
+    for (size_t i = 0; i < count; i++) {
+        total += items[i].quantity * items[i].price;
+    }
+    return total;
+}
+
+int main(void) {
+    Item items[MAX_ITEMS] = {{"bolt", 120, 0.25}, {"nut", 300, 0.1}};
+    // only the first two are set
+    printf("Total: %.2f\n", total_value(items, 2));
+    return items[0].name == NULL ? 1 : 0;
+}

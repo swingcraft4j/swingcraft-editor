@@ -28,12 +28,12 @@ public final class Languages {
         return installed().stream().filter(language -> language.id().equals(id)).findFirst();
     }
 
+    /**
+     * The language of a file by its extension. A name without a dot is taken as the extension
+     * itself, which finds the language of a file such as {@code Dockerfile}.
+     */
     public static Optional<Language> forFileName(String fileName) {
-        int dot = fileName.lastIndexOf('.');
-        if (dot < 0) {
-            return Optional.empty();
-        }
-        String extension = fileName.substring(dot + 1).toLowerCase(Locale.ROOT);
+        String extension = fileName.substring(fileName.lastIndexOf('.') + 1).toLowerCase(Locale.ROOT);
         return installed().stream().filter(language -> language.fileExtensions().contains(extension)).findFirst();
     }
 }

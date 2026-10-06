@@ -1,0 +1,34 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+
+namespace Warehouse;
+
+/// <summary>An item of the warehouse.</summary>
+public record Item(string Name, int Quantity, decimal Price)
+{
+    public decimal Value => Quantity * Price;
+}
+
+public static class Program
+{
+    private const int LowStock = 10;
+
+    public static void Main(string[] args)
+    {
+        var items = new List<Item>
+        {
+            new("bolt", 120, 0.25m),
+            new("nut", 300, 0.10m),
+        };
+
+        // the items that have to be ordered again
+        foreach (var item in items.Where(i => i.Quantity < LowStock))
+        {
+            Console.WriteLine($"Low on {item.Name}");
+        }
+
+        string path = @"C:\data\items.csv";
+        Console.WriteLine("Total: {0} ({1})", items.Sum(i => i.Value), path);
+    }
+}

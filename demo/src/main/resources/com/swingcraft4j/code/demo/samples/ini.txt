@@ -1,0 +1,17 @@
+; The settings of the warehouse application
+[app]
+name = Warehouse Inventory
+version = 1.4.2
+debug = false
+
+[database]
+host = localhost
+port = 5432
+user = "inventory"
+pool size = 10
+
+# the window as it was left
+[window]
+maximized = yes
+width = 1280
+height = 800

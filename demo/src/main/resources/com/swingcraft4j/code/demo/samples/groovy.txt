@@ -1,0 +1,33 @@
+plugins {
+    id 'java-library'
+    id 'maven-publish'
+}
+
+group = 'com.example'
+version = '1.4.2'
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    api "com.formdev:flatlaf:${flatlafVersion}"
+    testImplementation 'org.junit.jupiter:junit-jupiter:5.11.4'
+}
+
+// the items of the warehouse, for the report task
+def items = [bolt: 120, nut: 300]
+
+tasks.register('report') {
+    description = 'Prints what is in stock'
+    doLast {
+        items.each { name, quantity ->
+            println "${name.padRight(8)} $quantity"
+        }
+        assert items.size() == 2
+    }
+}
+
+test {
+    useJUnitPlatform()
+}

@@ -1,0 +1,34 @@
+package main
+
+import (
+	"fmt"
+	"os"
+)
+
+// Item is an item of the warehouse.
+type Item struct {
+	Name     string
+	Quantity int
+	Price    float64
+}
+
+// Value is what the stock of the item is worth.
+func (i Item) Value() float64 {
+	return float64(i.Quantity) * i.Price
+}
+
+func total(items []Item) (sum float64) {
+	for _, item := range items {
+		sum += item.Value()
+	}
+	return sum
+}
+
+func main() {
+	items := []Item{{"bolt", 120, 0.25}, {"nut", 300, 0.1}}
+	if len(items) == 0 {
+		fmt.Fprintln(os.Stderr, `nothing in stock`)
+		os.Exit(1)
+	}
+	fmt.Printf("Total: %.2f\n", total(items))
+}

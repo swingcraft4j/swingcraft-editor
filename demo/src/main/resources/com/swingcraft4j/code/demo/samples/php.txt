@@ -1,0 +1,35 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Warehouse;
+
+/**
+ * An item of the warehouse.
+ */
+final class Item
+{
+    public function __construct(
+        public readonly string $name,
+        private int $quantity,
+        private float $price,
+    ) {
+    }
+
+    public function value(): float
+    {
+        return $this->quantity * $this->price;
+    }
+}
+
+function total(array $items): float
+{
+    return array_sum(array_map(fn (Item $item) => $item->value(), $items));
+}
+
+$items = [new Item('bolt', 120, 0.25), new Item('nut', 300, 0.1)];
+
+# only when there is something in stock
+if (count($items) > 0) {
+    echo "Total: " . number_format(total($items), 2) . "\n";
+}

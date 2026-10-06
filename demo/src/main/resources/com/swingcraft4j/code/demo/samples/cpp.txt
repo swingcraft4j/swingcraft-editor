@@ -1,0 +1,37 @@
+#include <iostream>
+#include <string>
+#include <vector>
+
+namespace warehouse {
+
+/* An item of the warehouse. */
+class Item {
+public:
+    Item(std::string name, int quantity, double price)
+        : name_(std::move(name)), quantity_(quantity), price_(price) {}
+
+    double value() const noexcept { return quantity_ * price_; }
+    const std::string &name() const { return name_; }
+
+private:
+    std::string name_;
+    int quantity_;
+    double price_;
+};
+
+template <typename T>
+double total(const std::vector<T> &items) {
+    double sum = 0;
+    for (const auto &item : items) {
+        sum += item.value();
+    }
+    return sum;
+}
+
+} // namespace warehouse
+
+int main() {
+    std::vector<warehouse::Item> items{{"bolt", 120, 0.25}, {"nut", 300, 0.1}};
+    std::cout << "Total: " << warehouse::total(items) << '\n';
+    return items.empty() ? 1 : 0;
+}

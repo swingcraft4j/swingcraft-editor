@@ -1,0 +1,19 @@
+# Builds the warehouse application and runs it on a small image
+FROM eclipse-temurin:21-jdk AS build
+WORKDIR /src
+COPY . .
+RUN ./mvnw --no-transfer-progress package \
+    && cp target/warehouse-*.jar /app.jar
+
+FROM eclipse-temurin:21-jre
+ARG VERSION=1.4.2
+ENV APP_HOME=/opt/warehouse \
+    JAVA_OPTS="-Xmx256m"
+LABEL version="${VERSION}"
+RUN apt-get update && apt-get install -y --no-install-recommends curl \
+    && adduser --system warehouse
+COPY --from=build /app.jar $APP_HOME/app.jar
+USER warehouse
+EXPOSE 8080
+HEALTHCHECK --interval=30s CMD curl -f http://localhost:8080/health || exit 1
+ENTRYPOINT ["java", "-jar", "/opt/warehouse/app.jar"]

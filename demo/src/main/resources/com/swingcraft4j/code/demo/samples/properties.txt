@@ -1,0 +1,13 @@
+# The settings of the warehouse application
+app.name = Warehouse Inventory
+app.version=1.4.2
+
+! the database
+db.url = jdbc:postgresql://localhost:5432/warehouse
+db.user: inventory
+db.pool.size = 10
+
+# a # inside a value is a part of it
+ui.accent.color = #0969da
+ui.title = Items in stock: {0}
+ui.languages = en, de, fr

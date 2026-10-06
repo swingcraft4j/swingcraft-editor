@@ -1,0 +1,24 @@
+# The settings of the warehouse application
+title = "Warehouse Inventory"
+version = "1.4.2"
+
+[owner]
+name = "Raven"
+since = 2024-03-01
+
+[database]
+host = "localhost"
+ports = [5432, 5433]
+pool.size = 10
+enabled = true
+path = 'C:\data\warehouse'
+
+[[items]]
+name = "bolt"
+quantity = 120
+price = 0.25
+
+[[items]]
+name = "nut"
+quantity = 300
+tags = ["small", "steel"]

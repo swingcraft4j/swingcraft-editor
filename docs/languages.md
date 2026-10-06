@@ -13,16 +13,32 @@ its comments are written.
 
 ## The languages that come with the library
 
-| Id           | Language   |
-|--------------|------------|
-| `css`        | CSS        |
-| `java`       | Java       |
-| `javascript` | JavaScript |
-| `typescript` | TypeScript |
-| `json`       | JSON       |
-| `python`     | Python     |
-| `sql`        | SQL        |
-| `xml`        | XML / HTML |
+| Id           | Language   | File extensions                          |
+|--------------|------------|------------------------------------------|
+| `c`          | C          | `c`, `h`                                 |
+| `cpp`        | C++        | `cpp`, `cc`, `cxx`, `hpp`, `hh`, `hxx`   |
+| `csharp`     | C#         | `cs`                                     |
+| `css`        | CSS        | `css`                                    |
+| `dockerfile` | Dockerfile | `dockerfile`, and the name `Dockerfile`  |
+| `env`        | Env        | `env`, as in `.env`                      |
+| `go`         | Go         | `go`                                     |
+| `groovy`     | Groovy     | `groovy`, `gradle`, `gvy`                |
+| `ini`        | INI        | `ini`, `cfg`                             |
+| `java`       | Java       | `java`                                   |
+| `javascript` | JavaScript | `js`, `mjs`, `cjs`, `jsx`                |
+| `typescript` | TypeScript | `ts`, `tsx`, `mts`, `cts`                |
+| `json`       | JSON       | `json`, `jsonc`, `json5`                 |
+| `kotlin`     | Kotlin     | `kt`, `kts`                              |
+| `php`        | PHP        | `php`, `phtml`                           |
+| `properties` | Properties | `properties`                             |
+| `python`     | Python     | `py`, `pyw`, `pyi`                       |
+| `rust`       | Rust       | `rs`                                     |
+| `sql`        | SQL        | `sql`, `ddl`, `dml`                      |
+| `toml`       | TOML       | `toml`                                   |
+| `xml`        | XML / HTML | `xml`, `html`, `htm`, `svg` and others   |
+
+`Languages.forFileName` goes by the extension. A name without a dot is looked up as it is, so `Dockerfile`
+finds its language.
 
 ```java
 Optional<Language> java = Languages.byId("java");
@@ -38,8 +54,8 @@ Most languages need no lexer written by hand. `RuleLanguage` is described by wor
 comments and strings, and regular expressions.
 
 ```java
-Language ini = RuleLanguage.builder("ini", "INI")
-        .extensions("ini", "cfg")
+Language conf = RuleLanguage.builder("conf", "Conf")
+        .extensions("conf")
         .lineComment(";")
         .pattern(TokenType.TAG, "\\[[^\\]]*\\]")
         .pattern(TokenType.ATTRIBUTE, "[\\w.]+(?=\\s*=)")
@@ -47,7 +63,7 @@ Language ini = RuleLanguage.builder("ini", "INI")
         .literals("true", "false")
         .build();
 
-viewer.setLanguage(ini);
+viewer.setLanguage(conf);
 ```
 
 | Method                           | What it adds                                                        |
@@ -190,11 +206,11 @@ com.example.MyLanguage
 The class needs a public constructor without parameters. For a `RuleLanguage`, make a subclass:
 
 ```java
-public final class IniLanguage extends RuleLanguage {
+public final class ConfLanguage extends RuleLanguage {
 
-    public IniLanguage() {
-        super(builder("ini", "INI")
-                .extensions("ini", "cfg")
+    public ConfLanguage() {
+        super(builder("conf", "Conf")
+                .extensions("conf")
                 .lineComment(";"));
     }
 }
