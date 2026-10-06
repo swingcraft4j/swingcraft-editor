@@ -40,7 +40,7 @@ public final class DemoApp {
     private static final int BIG_FILE_LINES = 1_000_000;
     private static final String PLAIN_TEXT = "Plain text";
 
-    private final JFrame frame = new JFrame("SwingCraft Code - viewer demo");
+    private final JFrame frame = new JFrame("SwingCraft4j Editor - viewer demo");
     private final JCodeViewer viewer = new JCodeViewer();
     private final JLabel status = new JLabel(" ");
     private final JComboBox<String> languages = new JComboBox<>();

@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>com.swingcraft4j</groupId>
+        <artifactId>swingcraft-editor</artifactId>
+        <version>${revision}</version>
+    </parent>
+
+    <artifactId>markdown-preview</artifactId>
+
+    <name>SwingCraft4j Markdown Preview</name>
+    <description>A preview of Markdown for Java Swing desktop applications, with the code blocks highlighted by the SwingCraft4j code editor</description>
+
+    <dependencies>
+        <!-- highlights the code blocks -->
+        <dependency>
+            <groupId>${project.groupId}</groupId>
+            <artifactId>code-editor</artifactId>
+        </dependency>
+        <!-- reads the Markdown; the extensions are for what GitHub has more: tables, task lists, strikethrough and bare addresses -->
+        <dependency>
+            <groupId>org.commonmark</groupId>
+            <artifactId>commonmark</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.commonmark</groupId>
+            <artifactId>commonmark-ext-gfm-tables</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.commonmark</groupId>
+            <artifactId>commonmark-ext-task-list-items</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.commonmark</groupId>
+            <artifactId>commonmark-ext-gfm-strikethrough</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.commonmark</groupId>
+            <artifactId>commonmark-ext-autolink</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter</artifactId>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+
+</project>

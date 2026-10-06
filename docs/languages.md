@@ -44,6 +44,9 @@ its comments are written.
 HTML reads what is inside its `script` elements as JavaScript and what is inside its `style` elements as CSS.
 Markdown reads the code of a fenced block in the language the fence names, where that is one of these.
 
+`Languages.forName` finds a language by its id, by one of its extensions or by a name it commonly goes by,
+such as `js`, `c++` or `golang`, in any case.
+
 `Languages.forFileName` goes by the extension. A name without a dot is looked up as it is, so `Dockerfile`
 finds its language.
 

@@ -11,6 +11,7 @@
     <packaging>pom</packaging>
     <modules>
         <module>code-editor</module>
+        <module>markdown-preview</module>
         <module>demo</module>
     </modules>
 
@@ -20,6 +21,7 @@
         <maven.compiler.release>17</maven.compiler.release>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <junit.version>5.11.4</junit.version>
+        <commonmark.version>0.30.0</commonmark.version>
         <flatlaf.version>3.7.2</flatlaf.version>
         <flatlaf-fonts-roboto.version>2.137</flatlaf-fonts-roboto.version>
         <flatlaf-fonts-roboto-mono.version>3.000</flatlaf-fonts-roboto-mono.version>
@@ -27,8 +29,8 @@
         <flatlaf-fonts-jetbrains-mono.version>2.304</flatlaf-fonts-jetbrains-mono.version>
     </properties>
 
-    <name>SwingCraft4j Code</name>
-    <description>A source code viewer and editor for Java Swing desktop applications, with syntax highlighting, code completion and no dependencies</description>
+    <name>SwingCraft4j Editor</name>
+    <description>A source code viewer and editor for Java Swing desktop applications, with syntax highlighting and code completion, and a preview of Markdown</description>
     <url>https://www.swingcraft4j.com</url>
 
     <licenses>
@@ -61,6 +63,36 @@
                 <groupId>${project.groupId}</groupId>
                 <artifactId>code-editor</artifactId>
                 <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>${project.groupId}</groupId>
+                <artifactId>markdown-preview</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.commonmark</groupId>
+                <artifactId>commonmark</artifactId>
+                <version>${commonmark.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.commonmark</groupId>
+                <artifactId>commonmark-ext-gfm-tables</artifactId>
+                <version>${commonmark.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.commonmark</groupId>
+                <artifactId>commonmark-ext-task-list-items</artifactId>
+                <version>${commonmark.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.commonmark</groupId>
+                <artifactId>commonmark-ext-gfm-strikethrough</artifactId>
+                <version>${commonmark.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.commonmark</groupId>
+                <artifactId>commonmark-ext-autolink</artifactId>
+                <version>${commonmark.version}</version>
             </dependency>
             <dependency>
                 <groupId>com.formdev</groupId>

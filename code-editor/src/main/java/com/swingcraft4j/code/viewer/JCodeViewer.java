@@ -392,10 +392,13 @@ public class JCodeViewer extends JComponent implements Scrollable {
         return theme;
     }
 
+    /** Sets the colours. Another theme is reported to property change listeners as {@code "theme"}. */
     public void setTheme(CodeTheme theme) {
+        CodeTheme old = this.theme;
         this.theme = Objects.requireNonNull(theme);
         repaint();
         gutter.repaint();
+        firePropertyChange("theme", old, theme);
     }
 
     /**

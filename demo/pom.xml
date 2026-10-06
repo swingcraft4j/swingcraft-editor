@@ -19,13 +19,17 @@
         <gpg.skip>true</gpg.skip>
     </properties>
 
-    <name>SwingCraft4j Code Demo</name>
+    <name>SwingCraft4j Editor Demo</name>
     <description>The demos of the swingcraft-editor library</description>
 
     <dependencies>
         <dependency>
             <groupId>${project.groupId}</groupId>
             <artifactId>code-editor</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>${project.groupId}</groupId>
+            <artifactId>markdown-preview</artifactId>
         </dependency>
         <!-- only the demos use FlatLaf; the library has no dependencies -->
         <dependency>

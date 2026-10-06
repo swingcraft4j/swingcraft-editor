@@ -71,7 +71,7 @@ An edit in an editor is not another model; for edits, see [Listen to edits](edit
 | `setRoundedSelection(boolean)`   | `true`  | Draws the selection with rounded corners                           |
 | `setTabSize(int)`                | `4`     | The width of a tab, in chars                                       |
 | `setBottomPadding(int)`          | `0`     | Empty space below the last line, in pixels                         |
-| `setTheme(CodeTheme)`            |         | The colours; see [Themes](themes.md)                               |
+| `setTheme(CodeTheme)`            |         | The colours; see [Themes](themes.md). Reported as the property `theme` |
 
 With a bottom padding the end of the text can be scrolled up, out from under what lies over the bottom of the
 view, such as a floating toolbar.

@@ -1,13 +1,14 @@
-# SwingCraft4j Code
+# SwingCraft4j Editor
 
 A source code viewer and editor for Java Swing desktop applications, with syntax highlighting and code
-completion. The library has no dependencies.
+completion, and a preview of Markdown. The code editor has no dependencies.
 
 | Component      | What it gives                                                                     | Docs                        |
 |----------------|-----------------------------------------------------------------------------------|-----------------------------|
 | `JCodeViewer`  | A read-only view of source code: cheap to show, also for very large files         | [Viewer](docs/viewer.md)    |
 | `JCodeEditor`  | The viewer with editing: undo, indentation, comment toggle, input methods         | [Editor](docs/editor.md)    |
 | `JCodeFindBar` | A find bar for either of them                                                     | [Viewer](docs/viewer.md#find) |
+| `JMarkdownPreview` | Markdown shown as the page it describes, also while it is typed in an editor  | [Markdown preview](docs/markdown.md) |
 
 | Topic          | What it covers                                                                    | Docs                                    |
 |----------------|-----------------------------------------------------------------------------------|-----------------------------------------|
@@ -30,6 +31,7 @@ Website: https://www.swingcraft4j.com
 - Eight colour themes, light and dark
 - Code completion with snippets, documentation and parameter hints, in a popup the user can resize
 - Error and warning markers
+- A preview of Markdown, with tables, task lists and highlighted code blocks, in a module of its own
 - Large documents: only the visible rows are measured, tokenized and painted
 
 ## Requirements
@@ -62,7 +64,11 @@ repository to use it:
 </dependency>
 ```
 
-The library has no dependencies, so nothing else comes in with it.
+The code editor has no dependencies, so nothing else comes in with it.
+
+The preview of Markdown is a module of its own, `markdown-preview`, which brings the code editor and
+[commonmark-java](https://github.com/commonmark/commonmark-java) with it; see
+[Markdown preview](docs/markdown.md).
 
 ## Quick start
 
@@ -90,7 +96,7 @@ pane. All the methods must be called on the event dispatch thread.
 
 ## Demo
 
-The `demo` module has three demos. It is not published, and it is the only module that uses
+The `demo` module has four demos. It is not published, and it is the only module that uses
 [FlatLaf](https://github.com/JFormDesigner/FlatLaf).
 
 | Class              | What it shows                                                        |
@@ -98,6 +104,7 @@ The `demo` module has three demos. It is not published, and it is the only modul
 | `DemoApp`          | The viewer, with the languages, the themes and a file of a million lines |
 | `EditorDemoApp`    | The editor, with code completion, parameter hints and markers        |
 | `VariablesDemoApp` | Syntax of your own laid over a language: `{{variables}}` in JSON     |
+| `MarkdownDemoApp`  | Markdown edited at the left and previewed at the right               |
 
 ```
 mvn install

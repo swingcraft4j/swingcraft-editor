@@ -7,8 +7,6 @@ import com.swingcraft4j.code.lexer.TokenSink;
 import com.swingcraft4j.code.lexer.TokenType;
 
 import java.util.List;
-import java.util.Locale;
-import java.util.Map;
 
 /**
  * Lexer for Markdown. What a line is shown as:
@@ -36,10 +34,6 @@ final class MarkdownLexer implements Lexer {
     private static final int LENGTH_SHIFT = 24;
     private static final int LENGTH_MASK = 0xF;
 
-    /** The names a fence may give a language besides its id and its file extensions. */
-    private static final Map<String, String> ALIASES = Map.of(
-            "c++", "cpp", "c#", "csharp", "golang", "go", "docker", "dockerfile", "console", "shell", "js", "javascript",
-            "ts", "typescript", "py", "python", "yml", "yaml");
 
     private final List<Language> languages = Languages.installed();
     /** The lexers of the languages of the fenced blocks, each made when it is first needed. */
@@ -142,16 +136,13 @@ final class MarkdownLexer implements Lexer {
 
     /** The index among the installed languages of the one a fence names, or -1. */
     private int languageOf(String name) {
-        String lower = name.toLowerCase(Locale.ROOT);
-        String id = ALIASES.getOrDefault(lower, lower);
-        for (int i = 0; i < languages.size() && i < LANGUAGE_MASK; i++) {
-            Language language = languages.get(i);
-            // not Markdown in Markdown: the state of its lexer does not fit in the state of this one
-            if (!language.id().equals("markdown") && (language.id().equals(id) || language.fileExtensions().contains(id))) {
-                return i;
-            }
+        Language language = Languages.forName(name).orElse(null);
+        // not Markdown in Markdown: the state of its lexer does not fit in the state of this one
+        if (language == null || language.id().equals("markdown")) {
+            return -1;
         }
-        return -1;
+        int index = languages.indexOf(language);
+        return index >= LANGUAGE_MASK ? -1 : index;
     }
 
     // ---- Blocks ----

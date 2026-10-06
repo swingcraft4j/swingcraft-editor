@@ -45,7 +45,7 @@ public final class EditorDemoApp {
 
     private static final int BIG_FILE_LINES = 1_000_000;
 
-    private final JFrame frame = new JFrame("SwingCraft Code - editor demo");
+    private final JFrame frame = new JFrame("SwingCraft4j Editor - editor demo");
     private final JCodeEditor editor = new JCodeEditor();
     private final JLabel status = new JLabel(" ");
     private final JComboBox<String> languages = new JComboBox<>();
@@ -253,7 +253,7 @@ public final class EditorDemoApp {
 
     private void showTitle() {
         String name = file != null ? file.getFileName().toString() : "sample";
-        frame.setTitle((editor.isModified() ? "* " : "") + name + " - SwingCraft Code editor demo");
+        frame.setTitle((editor.isModified() ? "* " : "") + name + " - SwingCraft4j Editor - editor demo");
     }
 
     private void showPosition() {

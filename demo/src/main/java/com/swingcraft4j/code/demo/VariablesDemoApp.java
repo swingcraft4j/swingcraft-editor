@@ -69,7 +69,7 @@ public final class VariablesDemoApp {
             }
             """;
 
-    private final JFrame frame = new JFrame("SwingCraft Code - custom syntax demo");
+    private final JFrame frame = new JFrame("SwingCraft4j Editor - custom syntax demo");
     private final JCodeEditor editor = new JCodeEditor();
     private final JCodeViewer preview = new JCodeViewer();
     private final DefaultTableModel variables = new DefaultTableModel(new Object[]{"Variable", "Value"}, 0);
