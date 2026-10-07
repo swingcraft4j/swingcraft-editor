@@ -57,6 +57,10 @@ public class JMarkdownPreview extends JEditorPane {
     Color blockBackground;
     Color boxBorder;
     Color boxFill;
+    Color altText;
+
+    /** The images of the page, kept from one time it is rendered to the next. */
+    final MarkdownImages images = new MarkdownImages();
 
     private JCodeEditor followed;
     private final Timer followTimer = new Timer(FOLLOW_DELAY, e -> showFollowed());
@@ -279,6 +283,7 @@ public class JMarkdownPreview extends JEditorPane {
         // The backgrounds of code have round corners, which a style sheet of Swing has not: the views paint them.
         codeBackground = mix(background, foreground, 0.08f);
         boxBorder = quiet;
+        altText = quiet;
         boxFill = color("Component.accentColor", link);
         // code in a line has the size of the text around it, which Swing has to be told for each kind of text
         styles.addRule("code { " + codeFamily + " font-size: " + size + "pt; color: " + MarkdownHtml.hex(theme.foreground()) + "; }");

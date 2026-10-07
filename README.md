@@ -67,7 +67,8 @@ repository to use it:
 The code editor has no dependencies, so nothing else comes in with it.
 
 The preview of Markdown is a module of its own, `markdown-preview`, which brings the code editor and
-[commonmark-java](https://github.com/commonmark/commonmark-java) with it; see
+[commonmark-java](https://github.com/commonmark/commonmark-java) with it, and
+[JSVG](https://github.com/weisJ/jsvg) for the images that are SVG; see
 [Markdown preview](docs/markdown.md).
 
 ## Quick start

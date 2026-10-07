@@ -22,6 +22,7 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <junit.version>5.11.4</junit.version>
         <commonmark.version>0.30.0</commonmark.version>
+        <jsvg.version>2.2.0</jsvg.version>
         <flatlaf.version>3.7.2</flatlaf.version>
         <flatlaf-fonts-roboto.version>2.137</flatlaf-fonts-roboto.version>
         <flatlaf-fonts-roboto-mono.version>3.000</flatlaf-fonts-roboto-mono.version>
@@ -98,6 +99,11 @@
                 <groupId>org.commonmark</groupId>
                 <artifactId>commonmark-ext-heading-anchor</artifactId>
                 <version>${commonmark.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.github.weisj</groupId>
+                <artifactId>jsvg</artifactId>
+                <version>${jsvg.version}</version>
             </dependency>
             <dependency>
                 <groupId>com.formdev</groupId>

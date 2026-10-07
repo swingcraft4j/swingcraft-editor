@@ -75,6 +75,9 @@ final class MarkdownHtml {
                         attributes.put("cellpadding", "5");
                     }
                 })
+                // The end of a line that goes on in the next one is a blank. It is written as the char
+                // it is: Swing drops a blank or a line break that is all there is between two images.
+                .softbreak("&#32;")
                 .extensions(EXTENSIONS)
                 .build();
         return renderer.render(PARSER.parse(markdown)).replace("<del>", "<strike>").replace("</del>", "</strike>");

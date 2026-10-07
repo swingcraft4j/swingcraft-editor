@@ -24,7 +24,7 @@ All the methods must be called on the event dispatch thread.
 </dependency>
 ```
 
-The code editor and commonmark-java come in with it. For the snapshot repository, see the
+The code editor, commonmark-java and JSVG come in with it. For the snapshot repository, see the
 [README](../README.md#installation).
 
 ## Show Markdown
@@ -120,6 +120,18 @@ shown:
 ```java
 preview.setBase(file.getParent().toUri().toURL());
 ```
+
+The images are loaded by the preview, in the background: PNG, JPEG and GIF, and SVG, which is drawn with
+[JSVG](https://github.com/weisJ/jsvg) and so is sharp at any size. That is the format of the badges at the top
+of many a README:
+
+```markdown
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+```
+
+While an image is not there yet, and when it cannot be loaded, its text is shown in its place. An image that
+is loaded is kept, so that it is not fetched again each time the page is rendered; a file that is saved again
+is read again. An `<img>` tag with a `width` or a `height` in pixels has that size.
 
 ## Colours and font
 

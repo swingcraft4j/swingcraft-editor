@@ -4,15 +4,25 @@ import com.swingcraft4j.code.editor.JCodeEditor;
 import com.swingcraft4j.code.theme.CodeTheme;
 import com.swingcraft4j.code.theme.CodeThemes;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
+import javax.imageio.ImageIO;
 import javax.swing.JScrollPane;
 import javax.swing.LookAndFeel;
+import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
 import javax.swing.event.HyperlinkEvent;
 import javax.swing.plaf.nimbus.NimbusLookAndFeel;
+import javax.swing.text.View;
+import java.awt.Rectangle;
+import java.awt.image.BufferedImage;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.concurrent.TimeUnit;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class MarkdownPreviewTest {
@@ -134,5 +144,47 @@ class MarkdownPreviewTest {
         assertEquals("Dracula", preview.getCodeTheme().name(), "with the theme of the editor for the code");
         preview.follow(null);
         assertEquals("## Two", preview.getMarkdown(), "and stays when the editor is let go");
+    }
+
+    private static final String SVG = "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"300\" height=\"40\">"
+            + "<rect width=\"300\" height=\"40\" fill=\"#555\"/><text x=\"10\" y=\"25\" fill=\"#fff\">badge</text></svg>";
+
+    @Test
+    void loadsAnImageOfSvgAndOneOfPixels(@TempDir Path folder) throws Exception {
+        // as the address of a badge, the file has no ending that says what it is
+        Path svg = Files.writeString(folder.resolve("badge"), SVG);
+        MarkdownImages.Picture badge = MarkdownImages.load(svg.toUri().toURL());
+        assertEquals(300, badge.width);
+        assertEquals(40, badge.height);
+        BufferedImage painted = new BufferedImage(300, 40, BufferedImage.TYPE_INT_RGB);
+        badge.paint(painted.getGraphics(), null, new Rectangle(0, 0, 300, 40));
+        assertEquals(0x555555, painted.getRGB(290, 5) & 0xFFFFFF, "the SVG is drawn");
+
+        Path png = folder.resolve("dot.png");
+        ImageIO.write(new BufferedImage(30, 10, BufferedImage.TYPE_INT_RGB), "png", png.toFile());
+        MarkdownImages.Picture dot = MarkdownImages.load(png.toUri().toURL());
+        assertEquals(30, dot.width);
+        assertEquals(10, dot.height);
+
+        assertNull(MarkdownImages.load(folder.resolve("none.png").toUri().toURL()), "no such file");
+        assertNull(MarkdownImages.load(Files.writeString(folder.resolve("text.png"), "not an image").toUri().toURL()));
+    }
+
+    @Test
+    void laysThePageOutAroundAnImageOnceItIsLoaded(@TempDir Path folder) throws Exception {
+        Files.writeString(folder.resolve("wide.svg"), SVG);
+        JMarkdownPreview preview = new JMarkdownPreview();
+        preview.setBase(folder.toUri().toURL());
+        preview.setMarkdown("[![](wide.svg)](https://example.com) and <img src=\"wide.svg\" width=\"600\">");
+        View page = preview.getUI().getRootView(preview);
+
+        // the image is loaded on a thread of its own, and shown on the event dispatch thread
+        float[] width = new float[1];
+        long end = System.nanoTime() + TimeUnit.SECONDS.toNanos(10);
+        do {
+            Thread.sleep(20);
+            SwingUtilities.invokeAndWait(() -> width[0] = page.getPreferredSpan(View.X_AXIS));
+        } while (width[0] < 900 && System.nanoTime() < end);
+        assertTrue(width[0] >= 900, "the image in its own width and the one in the width of its tag: " + width[0]);
     }
 }
