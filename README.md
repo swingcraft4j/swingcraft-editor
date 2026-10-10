@@ -28,7 +28,7 @@ Website: https://www.swingcraft4j.com
   XML and YAML
 - CSS and JavaScript highlighted inside HTML, and the code of a fenced block inside Markdown
 - Line wrap, at any char or at words
-- Line numbers, code folding and matching brackets
+- Line numbers, code folding, matching brackets and indent guides
 - A text field for one line of code, which looks like the text fields of the look and feel
 - Find, with match case, whole word and regular expression, and go to line
 - Eight colour themes, light and dark

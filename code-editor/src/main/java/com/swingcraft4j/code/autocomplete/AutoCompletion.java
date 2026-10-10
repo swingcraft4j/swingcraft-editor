@@ -214,6 +214,7 @@ public final class AutoCompletion {
         preview.setLineNumbersVisible(false);
         preview.setFoldingEnabled(false);
         preview.setBracketMatching(false);
+        preview.setIndentGuides(false);
         preview.setFocusable(false);
         preview.setComponentPopupMenu(null);
         side.add(documentationScroll, "text");

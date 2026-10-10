@@ -68,6 +68,7 @@ An edit in an editor is not another model; for edits, see [Listen to edits](edit
 | `setLineNumbersVisible(boolean)` | `true`  | Shows the gutter with the line numbers                             |
 | `setFoldingEnabled(boolean)`     | `true`  | Shows the fold arrows in the gutter                                |
 | `setBracketMatching(boolean)`    | `true`  | Highlights the bracket at the caret and its partner                |
+| `setIndentGuides(boolean)`       | `true`  | Draws a faint line from a line down to where the lines indented under it end |
 | `setRoundedSelection(boolean)`   | `true`  | Draws the selection with rounded corners                           |
 | `setTabSize(int)`                | `4`     | The width of a tab, in chars                                       |
 | `setTopPadding(int)`             | `0`     | Empty space above the first line, in pixels                        |
@@ -80,6 +81,10 @@ With a bottom padding the end of the text can be scrolled up, out from under wha
 view, such as a floating toolbar.
 
 The line numbers move down with a top padding; the padding at the left is between them and the text.
+
+An indent guide joins an opening bracket to its closing one, as the `{` and the `}` of a block or of an object
+of JSON. The guides go by the indentation of the lines, so they are there in any language that is indented, and
+a blank line does not break them. Beside a line that wraps a guide is drawn on its first row only.
 
 Wrapping at words reads better, but every line that wraps then has to be read whenever the width changes. A
 document with very many long lines re-wraps more slowly with it.

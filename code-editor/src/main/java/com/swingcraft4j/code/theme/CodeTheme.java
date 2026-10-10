@@ -27,6 +27,8 @@ public final class CodeTheme {
     private final Color foldMarkerBorder;
     private final Color explicitFoldMarkerBackground;
     private final Color explicitFoldMarkerBorder;
+    private final Color indentGuide;
+    private final Color explicitIndentGuide;
     /** The colour for each {@link Severity}, by ordinal. */
     private final Color[] markerColors;
     private final Color[] explicitMarkerColors;
@@ -50,6 +52,9 @@ public final class CodeTheme {
         explicitFoldMarkerBorder = builder.foldMarkerBorder;
         foldMarkerBackground = explicitFoldMarkerBackground != null ? explicitFoldMarkerBackground : mix(background, foreground, 0.12f);
         foldMarkerBorder = explicitFoldMarkerBorder != null ? explicitFoldMarkerBorder : mix(background, foreground, 0.25f);
+        // The indent guides are faint: they are there to follow with the eye, not to be read.
+        explicitIndentGuide = builder.indentGuide;
+        indentGuide = explicitIndentGuide != null ? explicitIndentGuide : mix(background, foreground, 0.14f);
         // Marker colours a theme does not set are chosen to stand out on its background.
         boolean dark = isDark();
         markerColors = new Color[]{
@@ -205,6 +210,11 @@ public final class CodeTheme {
         return foldMarkerBorder;
     }
 
+    /** The lines that run down from a line to where the lines indented under it end. */
+    public Color indentGuide() {
+        return indentGuide;
+    }
+
     /** The colour that lies the given part of the way from one colour to another. */
     private static Color mix(Color from, Color to, float part) {
         return new Color(
@@ -236,6 +246,7 @@ public final class CodeTheme {
                 .gutterBorder(gutterBorder)
                 .foldMarkerBackground(explicitFoldMarkerBackground)
                 .foldMarkerBorder(explicitFoldMarkerBorder)
+                .indentGuide(explicitIndentGuide)
                 .markerColor(Severity.ERROR, explicitMarkerColors[0])
                 .markerColor(Severity.WARNING, explicitMarkerColors[1])
                 .markerColor(Severity.INFO, explicitMarkerColors[2]);
@@ -257,6 +268,7 @@ public final class CodeTheme {
         private Color gutterBorder = Color.LIGHT_GRAY;
         private Color foldMarkerBackground;
         private Color foldMarkerBorder;
+        private Color indentGuide;
         private Color errorColor;
         private Color warningColor;
         private Color infoColor;
@@ -325,6 +337,12 @@ public final class CodeTheme {
         /** Sets the line around the mark of a collapsed fold; null goes back to the one made from the background and the foreground. */
         public Builder foldMarkerBorder(Color color) {
             foldMarkerBorder = color;
+            return this;
+        }
+
+        /** Sets the colour of the indent guides; null goes back to the one made from the background and the foreground. */
+        public Builder indentGuide(Color color) {
+            indentGuide = color;
             return this;
         }
 

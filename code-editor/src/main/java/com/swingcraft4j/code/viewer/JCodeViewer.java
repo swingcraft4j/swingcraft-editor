@@ -1,6 +1,7 @@
 package com.swingcraft4j.code.viewer;
 
 import com.swingcraft4j.code.folding.IndentFolding;
+import com.swingcraft4j.code.folding.IndentGuides;
 import com.swingcraft4j.code.layout.CellMeasure;
 import com.swingcraft4j.code.layout.Cells;
 import com.swingcraft4j.code.layout.RowIndex;
@@ -87,6 +88,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 public class JCodeViewer extends JComponent implements Scrollable {
 
     private static final int MIN_WRAP_CELLS = 8;
+    private static final char[] BLANK = {' '};
     /** What stands for the hidden lines of a collapsed fold, and the space at each side of it. */
     private static final String FOLD_MARKER = "...";
     private static final int FOLD_MARKER_PAD = 4;
@@ -166,6 +168,7 @@ public class JCodeViewer extends JComponent implements Scrollable {
     private int bracketPartnerOffset = -1;
 
     private boolean foldingEnabled = true;
+    private boolean indentGuides = true;
     /** The collapsed folds: the line each one starts at, mapped to its last hidden line. */
     private TreeMap<Integer, Integer> collapsedFolds = new TreeMap<>();
 
@@ -1087,6 +1090,21 @@ public class JCodeViewer extends JComponent implements Scrollable {
         }
     }
 
+    // ---- Indent guides ----
+
+    public boolean isIndentGuides() {
+        return indentGuides;
+    }
+
+    /**
+     * Whether a faint line runs down from each line to where the lines indented under it end, as
+     * from an opening brace to its closing one; on by default.
+     */
+    public void setIndentGuides(boolean indentGuides) {
+        this.indentGuides = indentGuides;
+        repaint();
+    }
+
     // ---- Folding ----
 
     public boolean isFoldingEnabled() {
@@ -1543,6 +1561,9 @@ public class JCodeViewer extends JComponent implements Scrollable {
                 return;
             }
             int lineCount = model.lineCount();
+            if (indentGuides) {
+                paintIndentGuides(g, firstRow, lastRow);
+            }
             for (int line = rows.lineAtRow(firstRow); line < lineCount; line++) {
                 int lineRow = rows.firstRow(line);
                 if (lineRow > lastRow) {
@@ -1558,6 +1579,37 @@ public class JCodeViewer extends JComponent implements Scrollable {
             }
         } finally {
             g.dispose();
+        }
+    }
+
+    /**
+     * Paints the indent guides of the lines on the given rows: under the text, and over the
+     * background of the line of the caret.
+     */
+    private void paintIndentGuides(Graphics2D g, int firstRow, int lastRow) {
+        int firstLine = rows.lineAtRow(firstRow);
+        IndentGuides guides = new IndentGuides(model, tabSize);
+        guides.startAt(firstLine);
+        // in a font that is not monospaced the indentation is as wide as its blanks are
+        double columnWidth = (monospaced ? 1 : glyphMeasure.clusterAdvance(BLANK, 0, 1)) * cellWidth;
+        g.setColor(theme.indentGuide());
+        int lineCount = model.lineCount();
+        for (int line = firstLine; line < lineCount; line++) {
+            int lineRow = rows.firstRow(line);
+            if (lineRow > lastRow) {
+                break;
+            }
+            // The lines of a collapsed fold are indented under the line it starts at, so leaving
+            // them out does not change the guides of the lines after them.
+            if (rows.isHidden(line)) {
+                continue;
+            }
+            int count = guides.next(line);
+            // Only beside the first row of a line that wraps: its other rows start at the margin,
+            // and the guides would run through their text.
+            for (int i = 0; i < count; i++) {
+                g.fillRect(padLeft + (int) Math.round(guides.column(i) * columnWidth), rowY(lineRow), 1, lineHeight);
+            }
         }
     }
 
