@@ -15,6 +15,7 @@ import com.swingcraft4j.code.viewer.JCodeViewer;
 import javax.swing.JPopupMenu;
 import javax.swing.KeyStroke;
 import javax.swing.Timer;
+import javax.swing.UIManager;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 import java.awt.AWTKeyStroke;
@@ -69,7 +70,6 @@ public class JCodeEditor extends JCodeViewer {
     public static final String ACTION_MOVE_LINES_UP = "move-lines-up";
     public static final String ACTION_MOVE_LINES_DOWN = "move-lines-down";
 
-    private static final int CARET_WIDTH = 2;
     /** In a regular expression: the rest of the line is not all blanks. */
     private static final String NOT_BLANK_AHEAD = "(?=[ \\t]*[^ \\t\\r\\n])";
     private static final String OPENING = "([{";
@@ -90,7 +90,7 @@ public class JCodeEditor extends JCodeViewer {
 
     private final EditHistory history = new EditHistory();
     private final List<ChangeListener> editListeners = new CopyOnWriteArrayList<>();
-    private final Timer blinkTimer = new Timer(530, e -> {
+    private final Timer blinkTimer = new Timer(500, e -> {
         caretOn = !caretOn;
         repaintCaret();
     });
@@ -214,10 +214,16 @@ public class JCodeEditor extends JCodeViewer {
         }
     }
 
-    /** Shows the caret, and blinks it only where it says that typing would change the text. */
+    /**
+     * Shows the caret, and blinks it only where it says that typing would change the text. It
+     * blinks at the rate the look and feel gives a text field, where zero is not at all.
+     */
     private void showCaret() {
         caretOn = true;
-        if (editable) {
+        int rate = UIManager.get("TextField.caretBlinkRate") instanceof Integer given ? given : 500;
+        if (editable && rate > 0) {
+            blinkTimer.setInitialDelay(rate);
+            blinkTimer.setDelay(rate);
             blinkTimer.restart();
         } else {
             blinkTimer.stop();
@@ -1267,7 +1273,7 @@ public class JCodeEditor extends JCodeViewer {
         if (caretOn) {
             Rectangle caret = getOffsetBounds(getCaretPosition());
             g.setColor(getTheme().foreground());
-            g.fillRect(caret.x, caret.y + 1, CARET_WIDTH, caret.height - 2);
+            g.fillRect(caret.x, caret.y, caretWidth(), caret.height);
         }
     }
 
@@ -1446,8 +1452,13 @@ public class JCodeEditor extends JCodeViewer {
         }
     }
 
+    /** The width the look and feel gives the caret of a text field, which is one pixel where it names none. */
+    private static int caretWidth() {
+        return UIManager.get("Caret.width") instanceof Integer width ? width : 1;
+    }
+
     private void repaintCaret() {
         Rectangle caret = getOffsetBounds(getCaretPosition());
-        repaint(caret.x - 1, caret.y, CARET_WIDTH + 2, caret.height);
+        repaint(caret.x - 1, caret.y, caretWidth() + 2, caret.height);
     }
 }
