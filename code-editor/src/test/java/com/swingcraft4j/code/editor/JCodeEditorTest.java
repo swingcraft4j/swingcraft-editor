@@ -287,6 +287,34 @@ class JCodeEditorTest {
     }
 
     @Test
+    void thePaddingMovesTheTextAndIsCountedInItsSize() {
+        editor.setText("abc\nabc\nabc");
+        Rectangle before = editor.getOffsetBounds(5);
+        int width = editor.getPreferredSize().width;
+        int height = editor.getPreferredSize().height;
+        editor.setTopPadding(10);
+        editor.setLeftPadding(editor.getLeftPadding() + 20);
+        editor.setRightPadding(editor.getRightPadding() + 3);
+        editor.setBottomPadding(40);
+        Rectangle after = editor.getOffsetBounds(5);
+        assertEquals(before.x + 20, after.x);
+        assertEquals(before.y + 10, after.y);
+        assertEquals(width + 23, editor.getPreferredSize().width);
+        assertEquals(height + 50, editor.getPreferredSize().height);
+        assertEquals(5, editor.offsetAt(after.x + 1, after.y + 1), "a point is on the text that is shown there");
+        assertEquals(0, editor.offsetAt(0, 0), "a point in the padding counts as one on the nearest text");
+
+        editor.select(5, 5);
+        press("caret-up");
+        assertEquals("a|bc\nabc\nabc", state());
+        press("caret-up");
+        assertEquals("|abc\nabc\nabc", state(), "above the first row is the start, whatever the padding");
+        editor.select(9, 9);
+        press("caret-down");
+        assertEquals("abc\nabc\nabc|", state(), "below the last row is the end, whatever the padding");
+    }
+
+    @Test
     void aBracketTypedWithItsPartnerMovesTheCaretOnce() {
         List<String> seen = new java.util.ArrayList<>();
         editor.addSelectionListener(e -> seen.add(state()));

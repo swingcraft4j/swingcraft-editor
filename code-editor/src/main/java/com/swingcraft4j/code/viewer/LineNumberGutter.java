@@ -60,8 +60,8 @@ final class LineNumberGutter extends JComponent {
     @Override
     public String getToolTipText(MouseEvent e) {
         RowIndex rows = viewer.rowIndex();
-        int row = e.getY() / viewer.lineHeight();
-        if (!viewer.hasMarkers() || e.getY() < 0 || row >= rows.rowCount()) {
+        int row = viewer.rowAtY(e.getY());
+        if (!viewer.hasMarkers() || row < 0 || row >= rows.rowCount()) {
             return null;
         }
         return viewer.lineMarkerText(rows.lineAtRow(row));
@@ -75,8 +75,8 @@ final class LineNumberGutter extends JComponent {
     /** The foldable line whose arrow is under the mouse, or -1. */
     private int foldableLineAt(MouseEvent e) {
         RowIndex rows = viewer.rowIndex();
-        int row = e.getY() / viewer.lineHeight();
-        if (e.getX() < getWidth() - 1 - foldColumnWidth() || e.getY() < 0 || row >= rows.rowCount()) {
+        int row = viewer.rowAtY(e.getY());
+        if (e.getX() < getWidth() - 1 - foldColumnWidth() || row < 0 || row >= rows.rowCount()) {
             return -1;
         }
         int line = rows.lineAtRow(row);
@@ -114,8 +114,8 @@ final class LineNumberGutter extends JComponent {
             int lineHeight = viewer.lineHeight();
             double cellWidth = viewer.cellWidth();
             int foldWidth = foldColumnWidth();
-            int firstRow = Math.max(0, clip.y / lineHeight);
-            int lastRow = Math.min(rows.rowCount() - 1, (clip.y + clip.height - 1) / lineHeight);
+            int firstRow = Math.max(0, viewer.rowAtY(clip.y));
+            int lastRow = Math.min(rows.rowCount() - 1, viewer.rowAtY(clip.y + clip.height - 1));
             if (firstRow > lastRow) {
                 return;
             }
@@ -134,20 +134,20 @@ final class LineNumberGutter extends JComponent {
                 }
                 String number = Integer.toString(line + 1);
                 float x = (float) (width - 1 - foldWidth - (number.length() + 1) * cellWidth);
-                g.drawString(number, x, row * lineHeight + viewer.baseline());
+                g.drawString(number, x, viewer.rowY(row) + viewer.baseline());
                 Severity severity = viewer.hasMarkers() ? viewer.lineSeverity(line) : null;
                 if (severity != null) {
                     // a dot in the colour of the most serious marker on the line
                     int size = Math.max(6, lineHeight / 2 - 1);
                     g.setColor(theme.markerColor(severity));
-                    g.fillOval(3, row * lineHeight + (lineHeight - size) / 2, size, size);
+                    g.fillOval(3, viewer.rowY(row) + (lineHeight - size) / 2, size, size);
                     g.setColor(theme.gutterForeground());
                 }
                 if (foldWidth > 0 && viewer.isFoldable(line)) {
                     // centred on a pixel and a whole number of pixels in size, so that the
                     // two halves are the same and every arrow is like the others
                     int centerX = width - 1 - FOLD_PAD_RIGHT - (foldWidth - FOLD_PAD_RIGHT) / 2;
-                    int centerY = row * lineHeight + lineHeight / 2;
+                    int centerY = viewer.rowY(row) + lineHeight / 2;
                     paintArrow(g, centerX + 0.5, centerY + 0.5,
                             Math.max(3, Math.round(lineHeight / 5.0)), viewer.isCollapsed(line));
                 }

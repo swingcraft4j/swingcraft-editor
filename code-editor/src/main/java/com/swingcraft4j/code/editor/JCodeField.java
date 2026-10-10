@@ -392,7 +392,8 @@ public class JCodeField extends JComponent {
 
         FieldEditor() {
             setOpaque(false);
-            setSidePadding(0, CARET_ROOM);
+            setLeftPadding(0);
+            setRightPadding(CARET_ROOM);
             setLineNumbersVisible(false);
             setFoldingEnabled(false);
             setHighlightCurrentLine(false);

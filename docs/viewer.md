@@ -70,11 +70,16 @@ An edit in an editor is not another model; for edits, see [Listen to edits](edit
 | `setBracketMatching(boolean)`    | `true`  | Highlights the bracket at the caret and its partner                |
 | `setRoundedSelection(boolean)`   | `true`  | Draws the selection with rounded corners                           |
 | `setTabSize(int)`                | `4`     | The width of a tab, in chars                                       |
+| `setTopPadding(int)`             | `0`     | Empty space above the first line, in pixels                        |
 | `setBottomPadding(int)`          | `0`     | Empty space below the last line, in pixels                         |
+| `setLeftPadding(int)`            | `6`     | Empty space between the left edge and the text, in pixels          |
+| `setRightPadding(int)`           | `6`     | Empty space after the end of the longest line, in pixels           |
 | `setTheme(CodeTheme)`            |         | The colours; see [Themes](themes.md). Reported as the property `theme` |
 
 With a bottom padding the end of the text can be scrolled up, out from under what lies over the bottom of the
 view, such as a floating toolbar.
+
+The line numbers move down with a top padding; the padding at the left is between them and the text.
 
 Wrapping at words reads better, but every line that wraps then has to be read whenever the width changes. A
 document with very many long lines re-wraps more slowly with it.
@@ -128,6 +133,23 @@ frame.add(findBar, BorderLayout.SOUTH);
 
 Ctrl+F opens it and Escape closes it. It finds as you type, with options for match case, whole word and
 regular expression. Enter moves to the next match and Shift+Enter to the previous one.
+
+Beside its buttons the bar says which match is selected and how many there are, as `2 of 15`. It says
+nothing where there are more than 9999 matches, or the document is so long that counting them would hold
+the typing up.
+
+The buttons are all of one size. With FlatLaf they are painted as the buttons of a toolbar, and the field has
+the outline of an error while there is no match.
+
+The bar hands out its parts, to give them the look of your application: `getSearchField()`, `getLabel()`,
+`getMatchCaseButton()`, `getWholeWordButton()`, `getRegexButton()`, `getPreviousButton()`, `getNextButton()`,
+`getCloseButton()` and `getStatusLabel()`. A button that is given a size of its own keeps it.
+
+```java
+findBar.getMatchCaseButton().setText(null);
+findBar.getMatchCaseButton().setIcon(matchCaseIcon);
+findBar.getLabel().setVisible(false);
+```
 
 To search without the bar, set a `TextSearch`:
 

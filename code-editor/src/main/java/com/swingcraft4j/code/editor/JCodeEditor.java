@@ -1030,9 +1030,10 @@ public class JCodeEditor extends JCodeViewer {
         }
         int y = caret.y + rows * getRowHeight();
         int target;
-        if (y < 0) {
+        // above the first row or below the last one, not counting the padding around the text
+        if (y < getOffsetBounds(0).y) {
             target = 0;
-        } else if (y >= getPreferredSize().height) {
+        } else if (y > getOffsetBounds(getModel().length()).y) {
             target = getModel().length();
         } else {
             target = offsetAt(desiredX, y);
