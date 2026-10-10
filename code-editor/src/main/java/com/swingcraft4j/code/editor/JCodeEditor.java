@@ -290,6 +290,7 @@ public class JCodeEditor extends JCodeViewer {
             Toolkit.getDefaultToolkit().beep();
             return false;
         }
+        text = accepted(text);
         EditableTextModel model = model();
         String removed = model.getText(start, end);
         if (removed.isEmpty() && text.isEmpty()) {
@@ -306,6 +307,11 @@ public class JCodeEditor extends JCodeViewer {
         history.record(edit, kind);
         fireEdited();
         return true;
+    }
+
+    /** What is entered of a text that an edit is to put in: all of it here, one line of it in a {@link JCodeField}. */
+    String accepted(String text) {
+        return text;
     }
 
     /**

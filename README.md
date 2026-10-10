@@ -7,6 +7,7 @@ completion, and a preview of Markdown. The code editor has no dependencies.
 |----------------|-----------------------------------------------------------------------------------|-----------------------------|
 | `JCodeViewer`  | A read-only view of source code: cheap to show, also for very large files         | [Viewer](docs/viewer.md)    |
 | `JCodeEditor`  | The viewer with editing: undo, indentation, comment toggle, input methods         | [Editor](docs/editor.md)    |
+| `JCodeField`   | A text field for one line of code, with highlighting, completion and markers      | [Field](docs/field.md)      |
 | `JCodeFindBar` | A find bar for either of them                                                     | [Viewer](docs/viewer.md#find) |
 | `JMarkdownPreview` | Markdown shown as the page it describes, also while it is typed in an editor  | [Markdown preview](docs/markdown.md) |
 
@@ -28,6 +29,7 @@ Website: https://www.swingcraft4j.com
 - CSS and JavaScript highlighted inside HTML, and the code of a fenced block inside Markdown
 - Line wrap, at any char or at words
 - Line numbers, code folding and matching brackets
+- A text field for one line of code, which looks like the text fields of the look and feel
 - Find, with match case, whole word and regular expression, and go to line
 - Eight colour themes, light and dark
 - Code completion with snippets, documentation and parameter hints, in a popup the user can resize
@@ -99,14 +101,15 @@ pane. All the methods must be called on the event dispatch thread.
 
 ## Demo
 
-The `demo` module has four demos. It is not published, and it is the only module that uses
+The `demo` module has five demos. It is not published, and it is the only module that uses
 [FlatLaf](https://github.com/JFormDesigner/FlatLaf).
 
 | Class              | What it shows                                                        |
 |--------------------|----------------------------------------------------------------------|
 | `DemoApp`          | The viewer, with the languages, the themes and a file of a million lines |
 | `EditorDemoApp`    | The editor, with code completion, parameter hints and markers        |
-| `VariablesDemoApp` | Syntax of your own laid over a language: `{{variables}}` in JSON     |
+| `VariablesDemoApp` | Syntax of your own laid over a language: `{{variables}}` in JSON, and in a field of one line |
+| `FieldDemoApp`     | Text fields for one line of code: a template with variables, a condition of SQL, JSON, a regular expression |
 | `MarkdownDemoApp`  | Markdown edited at the left and previewed at the right               |
 
 ```

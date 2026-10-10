@@ -86,8 +86,6 @@ import java.util.concurrent.CopyOnWriteArrayList;
  */
 public class JCodeViewer extends JComponent implements Scrollable {
 
-    private static final int PAD_LEFT = 6;
-    private static final int PAD_RIGHT = 6;
     private static final int MIN_WRAP_CELLS = 8;
     /** What stands for the hidden lines of a collapsed fold, and the space at each side of it. */
     private static final String FOLD_MARKER = "...";
@@ -189,6 +187,9 @@ public class JCodeViewer extends JComponent implements Scrollable {
     private int spanClipRight;
 
     private boolean roundedSelection = true;
+    /** The empty space at the left and the right of the text, in pixels. */
+    private int padLeft = 6;
+    private int padRight = 6;
     private int bottomPadding;
     // Scratch space for working out the outline of a rounded selection.
     private final int[] extentRow = new int[2];
@@ -508,6 +509,18 @@ public class JCodeViewer extends JComponent implements Scrollable {
         gutter.revalidate();
     }
 
+    /**
+     * Sets the width in pixels of the empty space at the left and the right of the text. For a
+     * component that puts the viewer where the space is given by what is around it, as a text
+     * field does.
+     */
+    protected void setSidePadding(int left, int right) {
+        int anchor = topLine();
+        padLeft = left;
+        padRight = right;
+        relayout(anchor, true);
+    }
+
     public boolean isLineNumbersVisible() {
         return lineNumbersVisible;
     }
@@ -674,7 +687,7 @@ public class JCodeViewer extends JComponent implements Scrollable {
         int rowInLine = lineRows.rowOf(cell);
         int row = rows.firstRow(line) + rowInLine;
         cell -= lineRows.start(rowInLine);
-        return new Rectangle(PAD_LEFT + (int) (cell * cellWidth), row * lineHeight, (int) Math.ceil(cellWidth), lineHeight);
+        return new Rectangle(padLeft + (int) (cell * cellWidth), row * lineHeight, (int) Math.ceil(cellWidth), lineHeight);
     }
 
     /**
@@ -918,7 +931,7 @@ public class JCodeViewer extends JComponent implements Scrollable {
             return super.getToolTipText(event);
         }
         int row = Math.floorDiv(event.getY(), lineHeight);
-        double cell = (event.getX() - PAD_LEFT) / cellWidth;
+        double cell = (event.getX() - padLeft) / cellWidth;
         if (row < 0 || row >= rows.rowCount() || cell < 0) {
             return null;
         }
@@ -972,8 +985,8 @@ public class JCodeViewer extends JComponent implements Scrollable {
             if (lo >= hi) {
                 continue;
             }
-            int x1 = PAD_LEFT + (int) Math.round((lo - rowCell) * cellWidth);
-            int x2 = PAD_LEFT + (int) Math.round((hi - rowCell) * cellWidth);
+            int x1 = padLeft + (int) Math.round((lo - rowCell) * cellWidth);
+            int x2 = padLeft + (int) Math.round((hi - rowCell) * cellWidth);
             int y = (spanLineRow + row) * lineHeight + baseline + 1;
             int points = (x2 - x1) / 2 + 1;
             int[] xs = new int[points];
@@ -1268,7 +1281,7 @@ public class JCodeViewer extends JComponent implements Scrollable {
         if (!lineWrap) {
             return 0;
         }
-        int cells = (int) ((width - PAD_LEFT - PAD_RIGHT) / cellWidth);
+        int cells = (int) ((width - padLeft - padRight) / cellWidth);
         if (!monospaced && !wrapStyleWord) {
             cells -= 2; // room for the char that begins inside a row and ends past it
         }
@@ -1333,13 +1346,13 @@ public class JCodeViewer extends JComponent implements Scrollable {
             return super.getPreferredSize();
         }
         int cells = lineWrap ? MIN_WRAP_CELLS : rows.maxCells();
-        return new Dimension(PAD_LEFT + (int) Math.ceil(cells * cellWidth) + PAD_RIGHT,
+        return new Dimension(padLeft + (int) Math.ceil(cells * cellWidth) + padRight,
                 rows.rowCount() * lineHeight + bottomPadding);
     }
 
     @Override
     public Dimension getPreferredScrollableViewportSize() {
-        return new Dimension(PAD_LEFT + (int) Math.ceil(80 * cellWidth) + PAD_RIGHT, 25 * lineHeight);
+        return new Dimension(padLeft + (int) Math.ceil(80 * cellWidth) + padRight, 25 * lineHeight);
     }
 
     @Override
@@ -1436,7 +1449,8 @@ public class JCodeViewer extends JComponent implements Scrollable {
         return baseline;
     }
 
-    void applyTextHints(Graphics2D g) {
+    /** Has text drawn as the viewer draws its own: with the antialiasing of the desktop, and hinted. */
+    protected final void applyTextHints(Graphics2D g) {
         Object desktopHints = Toolkit.getDefaultToolkit().getDesktopProperty("awt.font.desktophints");
         if (desktopHints instanceof Map<?, ?> hints) {
             g.addRenderingHints(hints);
@@ -1454,8 +1468,10 @@ public class JCodeViewer extends JComponent implements Scrollable {
         Graphics2D g = (Graphics2D) graphics.create();
         try {
             Rectangle clip = g.getClipBounds();
-            g.setColor(theme.background());
-            g.fillRect(clip.x, clip.y, clip.width, clip.height);
+            if (isOpaque()) {
+                g.setColor(theme.background());
+                g.fillRect(clip.x, clip.y, clip.width, clip.height);
+            }
             spanClipLeft = clip.x;
             spanClipRight = clip.x + clip.width;
             paintBackgroundLayer(g, clip);
@@ -1503,8 +1519,8 @@ public class JCodeViewer extends JComponent implements Scrollable {
             spanCellFrom = spanRows.start(spanRow0);
             spanCellTo = spanRows.end(spanRow1);
         } else {
-            spanCellFrom = Math.max(0, (int) ((clip.x - PAD_LEFT) / cellWidth));
-            spanCellTo = (int) ((clip.x + clip.width - PAD_LEFT) / cellWidth) + 1;
+            spanCellFrom = Math.max(0, (int) ((clip.x - padLeft) / cellWidth));
+            spanCellTo = (int) ((clip.x + clip.width - padLeft) / cellWidth) + 1;
         }
         spanPlain = rows.isPlain(line);
 
@@ -1702,7 +1718,7 @@ public class JCodeViewer extends JComponent implements Scrollable {
         g.setFont(font);
         // Translating by the whole pixels keeps the float coordinate small, so a run far along
         // a very long line is still placed exactly.
-        double x = PAD_LEFT + (cell - spanRows.start(row)) * cellWidth;
+        double x = padLeft + (cell - spanRows.start(row)) * cellWidth;
         int wholeX = (int) x;
         g.translate(wholeX, 0);
         g.drawString(new String(text, start, length), (float) (x - wholeX), (spanLineRow + row) * lineHeight + baseline);
@@ -1727,8 +1743,8 @@ public class JCodeViewer extends JComponent implements Scrollable {
             double lo = Math.max(cellA, Math.max(rowCell, spanCellFrom));
             double hi = Math.min(cellB, Math.min(spanRows.end(row), spanCellTo));
             if (lo < hi) {
-                int x1 = PAD_LEFT + (int) Math.round((lo - rowCell) * cellWidth);
-                int x2 = PAD_LEFT + (int) Math.round((hi - rowCell) * cellWidth);
+                int x1 = padLeft + (int) Math.round((lo - rowCell) * cellWidth);
+                int x2 = padLeft + (int) Math.round((hi - rowCell) * cellWidth);
                 g.fillRect(x1, (spanLineRow + row) * lineHeight, x2 - x1, lineHeight);
             }
         }
@@ -1859,8 +1875,8 @@ public class JCodeViewer extends JComponent implements Scrollable {
         }
         double min = spanClipLeft - 100;
         double max = spanClipRight + 100;
-        extent[0] = (int) Math.round(Math.max(min, Math.min(max, PAD_LEFT + (lo - rowCell) * cellWidth)));
-        extent[1] = (int) Math.round(Math.max(min, Math.min(max, PAD_LEFT + (hi - rowCell) * cellWidth)));
+        extent[0] = (int) Math.round(Math.max(min, Math.min(max, padLeft + (lo - rowCell) * cellWidth)));
+        extent[1] = (int) Math.round(Math.max(min, Math.min(max, padLeft + (hi - rowCell) * cellWidth)));
         return extent[0] < extent[1];
     }
 
@@ -1869,7 +1885,7 @@ public class JCodeViewer extends JComponent implements Scrollable {
         int cells = rows.lineCells(line);
         LineRows lineRows = lineRows(line);
         int row = lineRows.rowOf(cells);
-        int x = PAD_LEFT + (int) ((cells - lineRows.start(row) + 1) * cellWidth);
+        int x = padLeft + (int) ((cells - lineRows.start(row) + 1) * cellWidth);
         int y = (rows.firstRow(line) + row) * lineHeight;
         // as wide as the dots are in this font: three cells are too wide where a dot is narrow
         int width = getFontMetrics(fonts[Font.PLAIN]).stringWidth(FOLD_MARKER) + 2 * FOLD_MARKER_PAD;
@@ -1912,7 +1928,7 @@ public class JCodeViewer extends JComponent implements Scrollable {
     public int offsetAt(int x, int y) {
         int row = clampRow(Math.floorDiv(y, lineHeight));
         int line = rows.lineAtRow(row);
-        double cell = Math.max(0, (x - PAD_LEFT) / cellWidth);
+        double cell = Math.max(0, (x - padLeft) / cellWidth);
         // a click past the end of a row counts as one at its end
         LineRows lineRows = lineRows(line);
         int rowInLine = row - rows.firstRow(line);

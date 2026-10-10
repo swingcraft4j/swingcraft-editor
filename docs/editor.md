@@ -32,6 +32,8 @@ input method is composed in place.
 For code completion, see [Code completion](autocomplete.md). For errors and warnings, see
 [Markers](markers.md).
 
+For one line of code in a text field, see [Field](field.md).
+
 ## Options
 
 | Method                             | Default | What it does                                                |

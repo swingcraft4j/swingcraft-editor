@@ -6,9 +6,11 @@ import com.swingcraft4j.code.autocomplete.CompletionKind;
 import com.swingcraft4j.code.autocomplete.CompletionProvider;
 import com.swingcraft4j.code.autocomplete.CompletionRequest;
 import com.swingcraft4j.code.editor.JCodeEditor;
+import com.swingcraft4j.code.editor.JCodeField;
 import com.swingcraft4j.code.lexer.Language;
 import com.swingcraft4j.code.lexer.Languages;
 import com.swingcraft4j.code.lexer.OverlayLanguage;
+import com.swingcraft4j.code.lexer.RuleLanguage;
 import com.swingcraft4j.code.lexer.TokenType;
 import com.swingcraft4j.code.marker.Marker;
 import com.swingcraft4j.code.text.ArrayTextModel;
@@ -44,7 +46,7 @@ import java.util.regex.Pattern;
  * <code>{{variables}}</code> in it, as in an API client. The variables are highlighted
  * wherever they stand, also inside strings; those without a value are underlined; typing
  * <code>{{</code> offers the ones there are; and the body with the values filled in is shown
- * below.
+ * below. The URL above it is a field of one line that does the same.
  */
 public final class VariablesDemoApp {
 
@@ -70,6 +72,7 @@ public final class VariablesDemoApp {
             """;
 
     private final JFrame frame = new JFrame("SwingCraft4j Editor - custom syntax demo");
+    private final JCodeField url = new JCodeField("{{baseUrl}}/users/{{userId}}?trace={{traceId}}");
     private final JCodeEditor editor = new JCodeEditor();
     private final JCodeViewer preview = new JCodeViewer();
     private final DefaultTableModel variables = new DefaultTableModel(new Object[]{"Variable", "Value"}, 0);
@@ -101,6 +104,14 @@ public final class VariablesDemoApp {
         variables.addRow(new Object[]{"userName", "Raven"});
         variables.addRow(new Object[]{"age", "30"});
         variables.addTableModelListener(e -> refresh());
+
+        // a URL is none of the languages: plain text, but for the variables
+        url.setLanguage(RuleLanguage.builder("url", "URL").pattern(TokenType.VARIABLE, VARIABLE).build());
+        url.setPlaceholder("Enter URL");
+        url.getEditor().setTheme(theme);
+        url.getEditor().addEditListener(e -> refresh());
+        new AutoCompletion(url.getEditor()).addProvider(new VariableProvider());
+        url.addActionListener(e -> status.setText(resolve(url.getText(), new ArrayList<>())));
 
         editor.setTheme(theme);
         editor.setText(BODY);
@@ -134,7 +145,11 @@ public final class VariablesDemoApp {
         side.add(buttons, BorderLayout.SOUTH);
 
         JPanel body = new JPanel(new BorderLayout());
-        body.add(titled("Request body"), BorderLayout.NORTH);
+        JPanel address = new JPanel(new BorderLayout());
+        address.setBorder(BorderFactory.createEmptyBorder(6, 6, 2, 6));
+        address.add(url, BorderLayout.CENTER);
+        address.add(titled("Request body - Enter in the URL above shows it with the values filled in"), BorderLayout.SOUTH);
+        body.add(address, BorderLayout.NORTH);
         body.add(new JScrollPane(editor), BorderLayout.CENTER);
         JPanel resolved = new JPanel(new BorderLayout());
         resolved.add(titled("With the values filled in"), BorderLayout.NORTH);
@@ -177,9 +192,24 @@ public final class VariablesDemoApp {
 
     /** Underlines the variables that have no value, and shows the body with the others filled in. */
     private void refresh() {
-        Map<String, String> values = values();
-        String text = editor.getText();
+        List<Marker> urlMarkers = new ArrayList<>();
+        resolve(url.getText(), urlMarkers);
+        url.getEditor().setMarkers(urlMarkers);
         List<Marker> markers = new ArrayList<>();
+        String resolved = resolve(editor.getText(), markers);
+        editor.setMarkers(markers);
+        preview.setDocument(ArrayTextModel.of(resolved), json);
+        int count = markers.size() + urlMarkers.size();
+        status.setText(count == 0 ? "Every variable has a value"
+                : count + (count == 1 ? " variable has" : " variables have") + " no value - hover the underlined text");
+    }
+
+    /**
+     * @param markers gets a marker for each variable of the text that has no value
+     * @return the text with the values of the variables filled in
+     */
+    private String resolve(String text, List<Marker> markers) {
+        Map<String, String> values = values();
         StringBuilder resolved = new StringBuilder();
         Matcher matcher = VARIABLE_PATTERN.matcher(text);
         int copied = 0;
@@ -194,11 +224,7 @@ public final class VariablesDemoApp {
             resolved.append(text, copied, matcher.start()).append(value != null ? value : matcher.group());
             copied = matcher.end();
         }
-        resolved.append(text, copied, text.length());
-        editor.setMarkers(markers);
-        preview.setDocument(ArrayTextModel.of(resolved), json);
-        status.setText(markers.isEmpty() ? "Every variable has a value"
-                : markers.size() + (markers.size() == 1 ? " variable has" : " variables have") + " no value - hover the underlined text");
+        return resolved.append(text, copied, text.length()).toString();
     }
 
     /** Offers the variables of the table once <code>{{</code> has been typed. */
