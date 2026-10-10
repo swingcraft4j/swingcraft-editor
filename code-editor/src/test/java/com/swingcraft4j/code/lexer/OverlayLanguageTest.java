@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class OverlayLanguageTest {
 
@@ -65,5 +66,17 @@ class OverlayLanguageTest {
         assertEquals("//", template.lineComment());
         assertEquals(json.keywords(), template.keywords());
         assertEquals("tpl", OverlayLanguage.over(json).id("tpl").extensions("tpl").build().fileExtensions().get(0));
+    }
+
+    @Test
+    void laysItsTokensOverPlainTextToo() {
+        Language plain = new PlainTextLanguage();
+        assertEquals(List.of(), lex(plain.createLexer(), new int[1], "port 8080, \"quoted\" and {braces}"), "nothing is highlighted in plain text");
+        Language url = OverlayLanguage.over(plain).pattern(TokenType.VARIABLE, "\\{\\{[^{}]*\\}\\}").build();
+        assertEquals(List.of("VARIABLE:{{host}}", "VARIABLE:{{id}}"),
+                lex(url.createLexer(), new int[1], "{{host}}:8080/users/{{id}}?page=2"),
+                "only what the patterns match, not the numbers a rule language would mark");
+        assertEquals("text", url.id());
+        assertTrue(Languages.byId("text").isEmpty(), "it is not a language to choose for a file");
     }
 }

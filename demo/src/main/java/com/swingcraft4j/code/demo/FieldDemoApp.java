@@ -8,7 +8,8 @@ import com.swingcraft4j.code.autocomplete.CompletionRequest;
 import com.swingcraft4j.code.editor.JCodeField;
 import com.swingcraft4j.code.lexer.Language;
 import com.swingcraft4j.code.lexer.Languages;
-import com.swingcraft4j.code.lexer.RuleLanguage;
+import com.swingcraft4j.code.lexer.OverlayLanguage;
+import com.swingcraft4j.code.lexer.PlainTextLanguage;
 import com.swingcraft4j.code.lexer.TokenType;
 import com.swingcraft4j.code.marker.Marker;
 import com.swingcraft4j.code.theme.CodeTheme;
@@ -69,7 +70,7 @@ public final class FieldDemoApp {
 
     private void show() {
         // the template is none of the languages: plain text, but for the variables
-        template.setLanguage(RuleLanguage.builder("template", "Template").pattern(TokenType.VARIABLE, VARIABLE).build());
+        template.setLanguage(OverlayLanguage.over(new PlainTextLanguage()).pattern(TokenType.VARIABLE, VARIABLE).build());
         template.setPlaceholder("A message - type {{ for the variables");
         JComboBox<String> kind = new JComboBox<>(new String[]{"Email", "SMS", "Letter"});
         JButton preview = new JButton("Preview");

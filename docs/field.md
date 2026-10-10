@@ -28,11 +28,11 @@ panel.add(field);
 
 The field is not put in a scroll pane. A text that is wider than the field is scrolled to where the caret is.
 
-A text of one line is often none of the languages there are. A `RuleLanguage` of a single pattern highlights
-what matters in it; see [Languages](languages.md):
+A text of one line is often none of the languages there are. An `OverlayLanguage` over plain text highlights
+what matters in it and nothing else; see [Languages](languages.md#syntax-laid-over-a-language):
 
 ```java
-Language url = RuleLanguage.builder("url", "URL")
+Language url = OverlayLanguage.over(new PlainTextLanguage())
         .pattern(TokenType.VARIABLE, "\\{\\{([^{}]*)\\}\\}")
         .build();
 field.setLanguage(url);

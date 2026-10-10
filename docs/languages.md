@@ -148,6 +148,19 @@ editor.setLanguage(template);
 A match lies within one line. Where two matches overlap, the one that starts first is kept. The keywords and
 the comments are those of the base language.
 
+Where the text around your syntax is no language, lay it over `PlainTextLanguage`, in which nothing is
+highlighted. A URL or a message with placeholders is such a text; a `RuleLanguage` would mark the numbers in it.
+
+```java
+Language url = OverlayLanguage.over(new PlainTextLanguage())
+        .displayName("URL")
+        .pattern(TokenType.VARIABLE, "\\{\\{[^{}]*\\}\\}")
+        .build();
+```
+
+`PlainTextLanguage` is not among the languages of the table above, which `Languages` finds: to show a text
+plain, give the viewer no language.
+
 `VariablesDemoApp` in the `demo` module shows this, with a colour of its own for the variables, markers for
 those without a value and code completion after `{{`.
 

@@ -10,7 +10,7 @@ import com.swingcraft4j.code.editor.JCodeField;
 import com.swingcraft4j.code.lexer.Language;
 import com.swingcraft4j.code.lexer.Languages;
 import com.swingcraft4j.code.lexer.OverlayLanguage;
-import com.swingcraft4j.code.lexer.RuleLanguage;
+import com.swingcraft4j.code.lexer.PlainTextLanguage;
 import com.swingcraft4j.code.lexer.TokenType;
 import com.swingcraft4j.code.marker.Marker;
 import com.swingcraft4j.code.text.ArrayTextModel;
@@ -106,7 +106,7 @@ public final class VariablesDemoApp {
         variables.addTableModelListener(e -> refresh());
 
         // a URL is none of the languages: plain text, but for the variables
-        url.setLanguage(RuleLanguage.builder("url", "URL").pattern(TokenType.VARIABLE, VARIABLE).build());
+        url.setLanguage(OverlayLanguage.over(new PlainTextLanguage()).pattern(TokenType.VARIABLE, VARIABLE).build());
         url.setPlaceholder("Enter URL");
         url.getEditor().setTheme(theme);
         url.getEditor().addEditListener(e -> refresh());
