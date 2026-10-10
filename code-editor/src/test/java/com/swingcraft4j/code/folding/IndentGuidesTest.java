@@ -73,4 +73,43 @@ class IndentGuidesTest {
         assertEquals(guides(0, lines).subList(4, 7), guides(4, lines), "as if the lines above had been asked about");
         assertEquals(guides(0, lines).subList(3, 7), guides(3, lines), "also from a blank line");
     }
+
+    @Test
+    void tellsTheLineEachGuideStartsUnder() {
+        TextModel model = ArrayTextModel.of(String.join("\n", "a {", "    b {", "        c", "", "    }", "}"));
+        IndentGuides guides = new IndentGuides(model, 4);
+        guides.startAt(2);
+        assertEquals(2, guides.next(2));
+        assertEquals(0, guides.line(0));
+        assertEquals(1, guides.line(1));
+        assertEquals(2, guides.next(3), "a blank line");
+        assertEquals(1, guides.line(1));
+        assertEquals(1, guides.next(4));
+        assertEquals(0, guides.line(0));
+    }
+
+    @Test
+    void findsTheBlockALineIsIn() {
+        TextModel model = ArrayTextModel.of(String.join("\n",
+                "a {",          // 0
+                "    b {",      // 1
+                "        c",    // 2
+                "",             // 3
+                "        d",    // 4
+                "    }",        // 5
+                "    e",        // 6
+                "",             // 7
+                "}",            // 8
+                "f"));          // 9
+        assertEquals(0, IndentGuides.blockStart(model, 0, 4), "a line that starts a block is in it");
+        assertEquals(1, IndentGuides.blockStart(model, 1, 4));
+        assertEquals(1, IndentGuides.blockStart(model, 2, 4));
+        assertEquals(1, IndentGuides.blockStart(model, 3, 4), "a blank line between the lines of a block");
+        assertEquals(1, IndentGuides.blockStart(model, 4, 4));
+        assertEquals(1, IndentGuides.blockStart(model, 5, 4), "the line that ends a block is in it");
+        assertEquals(0, IndentGuides.blockStart(model, 6, 4), "a line after a block that has ended is in the one around it");
+        assertEquals(0, IndentGuides.blockStart(model, 7, 4));
+        assertEquals(0, IndentGuides.blockStart(model, 8, 4));
+        assertEquals(-1, IndentGuides.blockStart(model, 9, 4), "at the top level there is none");
+    }
 }

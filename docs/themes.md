@@ -88,12 +88,13 @@ CodeTheme theme = CodeTheme.builder()
 | `foldMarkerBackground(Color)`          | The `...` mark that stands for a collapsed fold         |
 | `foldMarkerBorder(Color)`              | The line around that mark                               |
 | `indentGuide(Color)`                   | The [indent guides](viewer.md#options)                  |
+| `activeIndentGuide(Color)`             | The indent guide of the block the caret is in           |
 | `style(TokenType, TokenStyle)`         | The tokens of one type                                  |
 | `markerColor(Severity, Color)`         | The [markers](markers.md) of one severity               |
 
 A theme that does not set the two colours of the fold mark gets them made from its background and its
-foreground, so the mark shows also where the gutter has the colour of the text background. The colour of the
-indent guides is made the same way where it is not set.
+foreground, so the mark shows also where the gutter has the colour of the text background. The colours of the
+indent guides are made the same way where they are not set.
 
 ## Follow the look and feel
 

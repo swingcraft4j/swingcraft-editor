@@ -169,6 +169,8 @@ public class JCodeViewer extends JComponent implements Scrollable {
 
     private boolean foldingEnabled = true;
     private boolean indentGuides = true;
+    /** The line that starts the block the caret is in, whose indent guide stands out, or -1. */
+    private int activeGuideLine = -1;
     /** The collapsed folds: the line each one starts at, mapped to its last hidden line. */
     private TreeMap<Integer, Integer> collapsedFolds = new TreeMap<>();
 
@@ -293,6 +295,7 @@ public class JCodeViewer extends JComponent implements Scrollable {
         relayout(0, false);
         select(0, 0);
         updateBracketMatch();
+        updateActiveGuide();
         markerTimer.stop();
         setMarkers(List.of());
         runMarkerProvider();
@@ -361,6 +364,7 @@ public class JCodeViewer extends JComponent implements Scrollable {
         selectionCaret = caret;
         expandFoldsAround(model.lineOfOffset(caret));
         updateBracketMatch();
+        updateActiveGuide();
         if (moved) {
             selectionChanged();
         }
@@ -448,6 +452,7 @@ public class JCodeViewer extends JComponent implements Scrollable {
         collapsedFolds.clear(); // folds follow the indentation, which the tab size changes
         rows = createRowIndex();
         relayout(anchor, true);
+        updateActiveGuide();
     }
 
     private RowIndex createRowIndex() {
@@ -605,6 +610,7 @@ public class JCodeViewer extends JComponent implements Scrollable {
             selectionCaret = caret;
             expandFoldsAround(model.lineOfOffset(caret));
             updateBracketMatch();
+            updateActiveGuide();
             selectionChanged();
         }
         repaint();
@@ -1098,11 +1104,22 @@ public class JCodeViewer extends JComponent implements Scrollable {
 
     /**
      * Whether a faint line runs down from each line to where the lines indented under it end, as
-     * from an opening brace to its closing one; on by default.
+     * from an opening brace to its closing one; on by default. The one of the block the caret is
+     * in stands out.
      */
     public void setIndentGuides(boolean indentGuides) {
         this.indentGuides = indentGuides;
+        updateActiveGuide();
         repaint();
+    }
+
+    /** Finds the block the caret is in again, after the caret or the text has changed. */
+    private void updateActiveGuide() {
+        int line = indentGuides ? IndentGuides.blockStart(model, model.lineOfOffset(selectionCaret), tabSize) : -1;
+        if (line != activeGuideLine) {
+            activeGuideLine = line;
+            repaint();
+        }
     }
 
     // ---- Folding ----
@@ -1592,7 +1609,6 @@ public class JCodeViewer extends JComponent implements Scrollable {
         guides.startAt(firstLine);
         // in a font that is not monospaced the indentation is as wide as its blanks are
         double columnWidth = (monospaced ? 1 : glyphMeasure.clusterAdvance(BLANK, 0, 1)) * cellWidth;
-        g.setColor(theme.indentGuide());
         int lineCount = model.lineCount();
         for (int line = firstLine; line < lineCount; line++) {
             int lineRow = rows.firstRow(line);
@@ -1608,6 +1624,7 @@ public class JCodeViewer extends JComponent implements Scrollable {
             // Only beside the first row of a line that wraps: its other rows start at the margin,
             // and the guides would run through their text.
             for (int i = 0; i < count; i++) {
+                g.setColor(guides.line(i) == activeGuideLine ? theme.activeIndentGuide() : theme.indentGuide());
                 g.fillRect(padLeft + (int) Math.round(guides.column(i) * columnWidth), rowY(lineRow), 1, lineHeight);
             }
         }

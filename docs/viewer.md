@@ -86,6 +86,10 @@ An indent guide joins an opening bracket to its closing one, as the `{` and the 
 of JSON. The guides go by the indentation of the lines, so they are there in any language that is indented, and
 a blank line does not break them. Beside a line that wraps a guide is drawn on its first row only.
 
+The guide of the block the caret is in stands out among the others: the block of the line the caret is on
+where that line starts or ends one, as the line of an opening or a closing bracket does, and else the block
+around the line.
+
 Wrapping at words reads better, but every line that wraps then has to be read whenever the width changes. A
 document with very many long lines re-wraps more slowly with it.
 

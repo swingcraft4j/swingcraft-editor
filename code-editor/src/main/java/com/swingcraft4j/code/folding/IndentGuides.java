@@ -24,6 +24,8 @@ public final class IndentGuides {
     private final int tabSize;
     /** Where the last line that was not blank begins, and before it the lines it is indented under, outermost first. */
     private int[] columns = new int[16];
+    /** The line each of them is: the line a guide starts under. */
+    private int[] lines = new int[16];
     private int size;
 
     public IndentGuides(TextModel model, int tabSize) {
@@ -38,7 +40,7 @@ public final class IndentGuides {
         for (int previous = line - 1; previous >= Math.max(0, line - MAX_LINES_UP) && limit > 0; previous--) {
             int indent = IndentFolding.indent(model, previous, tabSize);
             if (indent >= 0 && indent < limit) {
-                push(indent);
+                push(indent, previous);
                 limit = indent;
             }
         }
@@ -47,6 +49,9 @@ public final class IndentGuides {
             int column = columns[i];
             columns[i] = columns[j];
             columns[j] = column;
+            int owner = lines[i];
+            lines[i] = lines[j];
+            lines[j] = owner;
         }
     }
 
@@ -61,7 +66,7 @@ public final class IndentGuides {
                 size--;
             }
             int count = size;
-            push(indent);
+            push(indent, line);
             return count;
         }
         // A blank line: the guides of the line before it or of the one after it, whichever has more.
@@ -82,10 +87,60 @@ public final class IndentGuides {
         return columns[guide];
     }
 
-    private void push(int column) {
+    /** The line a guide of the line asked about last starts under: the one whose lines it runs beside. */
+    public int line(int guide) {
+        return lines[guide];
+    }
+
+    /**
+     * The line that starts the block a line is in, which is the line the innermost guide around
+     * it starts under, or -1 at the top level. A line that has lines indented under it starts
+     * its own block, and a line that ends one, as a closing bracket does, is in the block it ends.
+     */
+    public static int blockStart(TextModel model, int line, int tabSize) {
+        int indent = IndentFolding.indent(model, line, tabSize);
+        if (indent < 0) {
+            // a blank line is in the block of its innermost guide
+            IndentGuides guides = new IndentGuides(model, tabSize);
+            guides.startAt(line);
+            int count = guides.next(line);
+            return count > 0 ? guides.line(count - 1) : -1;
+        }
+        if (IndentFolding.isFoldStart(model, line, tabSize)) {
+            return line;
+        }
+        // Right below lines indented further the line ends their block, which the first line above
+        // that is indented the same started. Otherwise it is in the block of the first line above
+        // that is indented less, with the lines beside it and their blocks in between.
+        boolean belowDeeper = false;
+        boolean beside = false;
+        for (int previous = line - 1; previous >= Math.max(0, line - MAX_LINES_UP); previous--) {
+            int other = IndentFolding.indent(model, previous, tabSize);
+            if (other < 0) {
+                continue;
+            }
+            if (other < indent) {
+                return previous;
+            }
+            if (!beside) {
+                if (other > indent) {
+                    belowDeeper = true;
+                } else if (belowDeeper) {
+                    return previous;
+                } else {
+                    beside = true;
+                }
+            }
+        }
+        return -1;
+    }
+
+    private void push(int column, int line) {
         if (size == columns.length) {
             columns = Arrays.copyOf(columns, size * 2);
+            lines = Arrays.copyOf(lines, size * 2);
         }
-        columns[size++] = column;
+        columns[size] = column;
+        lines[size++] = line;
     }
 }

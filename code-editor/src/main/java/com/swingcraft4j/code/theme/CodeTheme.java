@@ -29,6 +29,8 @@ public final class CodeTheme {
     private final Color explicitFoldMarkerBorder;
     private final Color indentGuide;
     private final Color explicitIndentGuide;
+    private final Color activeIndentGuide;
+    private final Color explicitActiveIndentGuide;
     /** The colour for each {@link Severity}, by ordinal. */
     private final Color[] markerColors;
     private final Color[] explicitMarkerColors;
@@ -55,6 +57,8 @@ public final class CodeTheme {
         // The indent guides are faint: they are there to follow with the eye, not to be read.
         explicitIndentGuide = builder.indentGuide;
         indentGuide = explicitIndentGuide != null ? explicitIndentGuide : mix(background, foreground, 0.14f);
+        explicitActiveIndentGuide = builder.activeIndentGuide;
+        activeIndentGuide = explicitActiveIndentGuide != null ? explicitActiveIndentGuide : mix(background, foreground, 0.42f);
         // Marker colours a theme does not set are chosen to stand out on its background.
         boolean dark = isDark();
         markerColors = new Color[]{
@@ -215,6 +219,11 @@ public final class CodeTheme {
         return indentGuide;
     }
 
+    /** The indent guide of the block the caret is in, which stands out among the others. */
+    public Color activeIndentGuide() {
+        return activeIndentGuide;
+    }
+
     /** The colour that lies the given part of the way from one colour to another. */
     private static Color mix(Color from, Color to, float part) {
         return new Color(
@@ -247,6 +256,7 @@ public final class CodeTheme {
                 .foldMarkerBackground(explicitFoldMarkerBackground)
                 .foldMarkerBorder(explicitFoldMarkerBorder)
                 .indentGuide(explicitIndentGuide)
+                .activeIndentGuide(explicitActiveIndentGuide)
                 .markerColor(Severity.ERROR, explicitMarkerColors[0])
                 .markerColor(Severity.WARNING, explicitMarkerColors[1])
                 .markerColor(Severity.INFO, explicitMarkerColors[2]);
@@ -269,6 +279,7 @@ public final class CodeTheme {
         private Color foldMarkerBackground;
         private Color foldMarkerBorder;
         private Color indentGuide;
+        private Color activeIndentGuide;
         private Color errorColor;
         private Color warningColor;
         private Color infoColor;
@@ -343,6 +354,12 @@ public final class CodeTheme {
         /** Sets the colour of the indent guides; null goes back to the one made from the background and the foreground. */
         public Builder indentGuide(Color color) {
             indentGuide = color;
+            return this;
+        }
+
+        /** Sets the colour of the indent guide of the block the caret is in; null goes back to the one made from the background and the foreground. */
+        public Builder activeIndentGuide(Color color) {
+            activeIndentGuide = color;
             return this;
         }
 
