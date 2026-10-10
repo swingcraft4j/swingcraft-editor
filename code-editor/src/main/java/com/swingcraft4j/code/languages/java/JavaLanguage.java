@@ -1,5 +1,7 @@
 package com.swingcraft4j.code.languages.java;
 
+import com.swingcraft4j.code.format.BraceFormatter;
+import com.swingcraft4j.code.format.Formatter;
 import com.swingcraft4j.code.lexer.Language;
 import com.swingcraft4j.code.lexer.Lexer;
 
@@ -41,5 +43,11 @@ public final class JavaLanguage implements Language {
     @Override
     public Lexer createLexer() {
         return new JavaLexer();
+    }
+
+    @Override
+    public Formatter formatter() {
+        return BraceFormatter.of(this).continuationIndent(2).generics().ternary().arrayInitializers()
+                .nestedContinuation().build();
     }
 }

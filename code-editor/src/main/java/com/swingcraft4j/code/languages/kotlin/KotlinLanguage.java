@@ -1,5 +1,7 @@
 package com.swingcraft4j.code.languages.kotlin;
 
+import com.swingcraft4j.code.format.BraceFormatter;
+import com.swingcraft4j.code.format.Formatter;
 import com.swingcraft4j.code.lexer.RuleLanguage;
 import com.swingcraft4j.code.lexer.TokenType;
 
@@ -26,5 +28,10 @@ public final class KotlinLanguage extends RuleLanguage {
                 .literals("true", "false", "null")
                 .detectFunctions()
                 .capitalizedTypes());
+    }
+
+    @Override
+    public Formatter formatter() {
+        return BraceFormatter.of(this).generics().elvis().noSemicolons().build();
     }
 }

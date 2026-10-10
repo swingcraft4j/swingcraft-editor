@@ -24,6 +24,7 @@ import com.swingcraft4j.code.theme.TokenStyle;
 
 import javax.swing.AbstractAction;
 import javax.swing.JComponent;
+import javax.swing.InputMap;
 import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
 import javax.swing.JPopupMenu;
@@ -104,12 +105,16 @@ public class JCodeViewer extends JComponent implements Scrollable {
     /** How long editing must pause before the marker provider is asked again, in milliseconds. */
     private static final int MARKER_DELAY = 350;
 
-    protected static final String ACTION_COPY = "copy";
-    protected static final String ACTION_SELECT_ALL = "select-all";
-    protected static final String ACTION_GO_TO_LINE = "go-to-line";
-    protected static final String ACTION_FIND = "find";
-    protected static final String ACTION_FIND_NEXT = "find-next";
-    protected static final String ACTION_FIND_PREVIOUS = "find-previous";
+    public static final String ACTION_COPY = "copy";
+    public static final String ACTION_SELECT_ALL = "select-all";
+    public static final String ACTION_GO_TO_LINE = "go-to-line";
+    /** There is no such action until a find bar is attached. */
+    public static final String ACTION_FIND = "find";
+    public static final String ACTION_FIND_NEXT = "find-next";
+    public static final String ACTION_FIND_PREVIOUS = "find-previous";
+    public static final String ACTION_COLLAPSE_FOLD = "collapse-fold";
+    public static final String ACTION_EXPAND_FOLD = "expand-fold";
+    public static final String ACTION_EXPAND_ALL_FOLDS = "expand-all-folds";
 
     private final LineNumberGutter gutter = new LineNumberGutter(this);
     private final TokenBuffer tokens = new TokenBuffer();
@@ -2008,11 +2013,11 @@ public class JCodeViewer extends JComponent implements Scrollable {
                 KeyStroke.getKeyStroke(KeyEvent.VK_INSERT, InputEvent.CTRL_DOWN_MASK));
         bindAction(ACTION_SELECT_ALL, this::selectAll, KeyStroke.getKeyStroke(KeyEvent.VK_A, menuKey));
         bindAction(ACTION_GO_TO_LINE, this::showGoToLineDialog, KeyStroke.getKeyStroke(KeyEvent.VK_G, menuKey));
-        bindAction("collapse-fold", this::collapseFoldAtCaret, KeyStroke.getKeyStroke(KeyEvent.VK_MINUS, menuKey),
+        bindAction(ACTION_COLLAPSE_FOLD, this::collapseFoldAtCaret, KeyStroke.getKeyStroke(KeyEvent.VK_MINUS, menuKey),
                 KeyStroke.getKeyStroke(KeyEvent.VK_SUBTRACT, menuKey));
-        bindAction("expand-fold", this::expandFoldAtCaret, KeyStroke.getKeyStroke(KeyEvent.VK_EQUALS, menuKey),
+        bindAction(ACTION_EXPAND_FOLD, this::expandFoldAtCaret, KeyStroke.getKeyStroke(KeyEvent.VK_EQUALS, menuKey),
                 KeyStroke.getKeyStroke(KeyEvent.VK_ADD, menuKey));
-        bindAction("expand-all-folds", this::expandAllFolds,
+        bindAction(ACTION_EXPAND_ALL_FOLDS, this::expandAllFolds,
                 KeyStroke.getKeyStroke(KeyEvent.VK_EQUALS, menuKey | InputEvent.SHIFT_DOWN_MASK));
         bindAction(ACTION_FIND_NEXT, this::findNext, KeyStroke.getKeyStroke(KeyEvent.VK_F3, 0));
         bindAction(ACTION_FIND_PREVIOUS, this::findPrevious, KeyStroke.getKeyStroke(KeyEvent.VK_F3, InputEvent.SHIFT_DOWN_MASK));
@@ -2029,6 +2034,41 @@ public class JCodeViewer extends JComponent implements Scrollable {
                 action.run();
             }
         });
+    }
+
+    /**
+     * Gives an action other keys than the ones it has: those it had no longer run it, and with
+     * no keys it is left without any. A key that ran another action runs this one from now on.
+     * The actions of the viewer and the editor are named by the {@code ACTION_} constants; a
+     * popup menu shows the new key beside its item.
+     *
+     * @throws IllegalArgumentException if there is no action of that name
+     */
+    public void setKeys(String actionName, KeyStroke... keys) {
+        if (getActionMap().get(actionName) == null) {
+            throw new IllegalArgumentException("No action named " + actionName);
+        }
+        InputMap bound = getInputMap(WHEN_FOCUSED);
+        for (KeyStroke key : getKeys(actionName)) {
+            bound.remove(key);
+        }
+        for (KeyStroke key : keys) {
+            bound.put(key, actionName);
+        }
+    }
+
+    /** The keys that run an action while the viewer has focus, in no particular order; none for a name that is not known. */
+    public List<KeyStroke> getKeys(String actionName) {
+        InputMap bound = getInputMap(WHEN_FOCUSED);
+        List<KeyStroke> keys = new ArrayList<>();
+        if (bound.keys() != null) {
+            for (KeyStroke key : bound.keys()) {
+                if (actionName.equals(bound.get(key))) {
+                    keys.add(key);
+                }
+            }
+        }
+        return keys;
     }
 
     private void installPopupMenu() {

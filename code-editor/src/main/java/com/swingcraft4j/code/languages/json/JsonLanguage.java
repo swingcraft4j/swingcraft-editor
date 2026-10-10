@@ -1,5 +1,7 @@
 package com.swingcraft4j.code.languages.json;
 
+import com.swingcraft4j.code.format.Formatter;
+import com.swingcraft4j.code.format.JsonFormatter;
 import com.swingcraft4j.code.lexer.RuleLanguage;
 import com.swingcraft4j.code.lexer.TokenType;
 
@@ -17,5 +19,10 @@ public final class JsonLanguage extends RuleLanguage {
                 .literals("true", "false", "null")
                 .operators(":")
                 .punctuation("{}[],"));
+    }
+
+    @Override
+    public Formatter formatter() {
+        return new JsonFormatter();
     }
 }

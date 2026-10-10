@@ -1,5 +1,7 @@
 package com.swingcraft4j.code.lexer;
 
+import com.swingcraft4j.code.format.Formatter;
+
 import java.util.Collection;
 import java.util.List;
 
@@ -33,6 +35,11 @@ public interface Language {
      * if there is none. An editor uses it to comment lines out where there is no line comment.
      */
     default String[] blockComment() {
+        return null;
+    }
+
+    /** What lays the text of the language out afresh when an editor is asked to format it, or null if nothing does. */
+    default Formatter formatter() {
         return null;
     }
 

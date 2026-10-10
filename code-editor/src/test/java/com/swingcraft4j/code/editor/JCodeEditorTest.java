@@ -1,5 +1,7 @@
 package com.swingcraft4j.code.editor;
 
+import com.swingcraft4j.code.languages.json.JsonLanguage;
+import com.swingcraft4j.code.languages.markdown.MarkdownLanguage;
 import com.swingcraft4j.code.lexer.Language;
 import com.swingcraft4j.code.lexer.RuleLanguage;
 import com.swingcraft4j.code.marker.Marker;
@@ -375,6 +377,125 @@ class JCodeEditorTest {
         editor.setDocument(new GapTextModel("plain"), null);
         editor.toggleComment();
         assertEquals("plain", editor.getText(), "nothing to do without a language that has comments");
+    }
+
+    @Test
+    void formatsTheWholeTextAsOneUndoStep() {
+        editor.setDocument(new GapTextModel("{\"a\":[1,2],\"b\":3}"), new JsonLanguage());
+        assertTrue(editor.canFormat());
+        editor.select(11, 11); // in front of "b"
+        press("format");
+        assertEquals("{\n    \"a\": [\n        1,\n        2\n    ],\n    |\"b\": 3\n}", state(),
+                "indented as the editor indents, and the caret stays with its text");
+        press("format");
+        editor.undo();
+        assertEquals("{\"a\":[1,2],|\"b\":3}", state(), "formatting what is formatted already is no edit");
+        assertFalse(editor.canUndo());
+
+        editor.setTabsToSpaces(false);
+        editor.setDocument(new GapTextModel("[1]\r\n"), new JsonLanguage());
+        editor.format();
+        assertEquals("[\r\n\t1\r\n]\r\n", editor.getText(), "tabs and line terminators as the document has them");
+    }
+
+    @Test
+    void formatsOnlyTheSelectedLines() {
+        editor.setDocument(new GapTextModel("{\n    \"keep\":{\"x\":1},\n    \"a\":{\"b\":[1,2]},\n    \"z\":1\n}"), new JsonLanguage());
+        editor.select(26, 30); // from "a" to its brace
+        editor.format();
+        assertEquals("{\n    \"keep\":{\"x\":1},\n    ^\"a\": |{\n        \"b\": [\n            1,\n            2\n        ]\n    },\n    \"z\":1\n}",
+                state(), "the lines keep the indentation they had in common");
+        editor.undo();
+        assertEquals("{\n    \"keep\":{\"x\":1},\n    ^\"a\":|{\"b\":[1,2]},\n    \"z\":1\n}", state());
+    }
+
+    @Test
+    void formatsSelectedLinesOfCodeWhereTheyStand() {
+        editor.setDocument(new GapTextModel("class A {\n    void f() {\n        int x=1;\n        if(x>0){\n        y();\n        }\n    }\n}"),
+                new com.swingcraft4j.code.languages.java.JavaLanguage());
+        editor.select(42, 70); // from the if to the brace that closes it
+        editor.format();
+        assertEquals("class A {\n    void f() {\n        int x=1;\n        if (x > 0) {\n            y();\n        }\n    }\n}",
+                editor.getText(), "the line above the selection is left as it was");
+        editor.undo();
+        editor.select(0, 0);
+        editor.format();
+        assertEquals("class A {\n    void f() {\n        int x = 1;\n        if (x > 0) {\n            y();\n        }\n    }\n}",
+                editor.getText());
+    }
+
+    @Test
+    void keepsTheCaretWithItsTextWhereFormattingAddsChars() {
+        editor.setDocument(new GapTextModel("|a|b|\n|-|-|\n|long|x|\n\nend"), new MarkdownLanguage());
+        editor.select(18, 18); // in front of the x
+        editor.format();
+        assertEquals("| a    | b   |\n| ---- | --- |\n| long | |x   |\n\nend", state());
+        editor.undo();
+        editor.select(24, 24);
+        editor.format();
+        assertEquals("| a    | b   |\n| ---- | --- |\n| long | x   |\n\nen|d", state(), "after dashes were added before it");
+        editor.undo();
+        editor.select(21, 21);
+        editor.format();
+        assertEquals("| a    | b   |\n| ---- | --- |\n| long | x   |\n|\nend", state(), "on an empty line");
+    }
+
+    @Test
+    void formattingKeepsTheRowOfTheCaretWhereItIsOnTheScreen() {
+        StringBuilder text = new StringBuilder("{\n\"first\":[1,2],\n");
+        for (int i = 0; i < 40; i++) {
+            text.append("    \"n").append(i).append("\": ").append(i).append(",\n");
+        }
+        editor.setDocument(new GapTextModel(text.append("    \"last\": 0\n}")), new JsonLanguage());
+        javax.swing.JViewport viewport = new javax.swing.JViewport();
+        viewport.setView(editor);
+        viewport.setSize(400, editor.getRowHeight() * 6);
+        viewport.doLayout();
+        viewport.setViewPosition(new java.awt.Point(0, editor.getRowHeight() * 20));
+        editor.select(editor.getModel().lineStart(22), editor.getModel().lineStart(22));
+
+        editor.format();
+        assertEquals(25, editor.getModel().lineOfOffset(editor.getCaretPosition()), "three lines were added above the caret");
+        assertEquals(editor.getRowHeight() * 23, viewport.getViewPosition().y);
+    }
+
+    @Test
+    void doesNotFormatWithoutAFormatter() {
+        Language toy = RuleLanguage.builder("toy", "Toy").build();
+        editor.setDocument(new GapTextModel("{\"a\":1}"), toy);
+        assertFalse(editor.canFormat());
+        editor.format();
+        assertEquals("{\"a\":1}", editor.getText());
+        editor.setLanguage(null);
+        assertFalse(editor.canFormat());
+        editor.format();
+        assertFalse(editor.canUndo());
+
+        editor.setLanguage(new JsonLanguage());
+        editor.setEditable(false);
+        editor.format();
+        assertEquals("{\"a\":1}", editor.getText(), "nor a text that is read only");
+    }
+
+    @Test
+    void givesAnActionOtherKeys() {
+        javax.swing.KeyStroke standard = javax.swing.KeyStroke.getKeyStroke(KeyEvent.VK_F,
+                java.awt.event.InputEvent.SHIFT_DOWN_MASK | java.awt.event.InputEvent.ALT_DOWN_MASK);
+        javax.swing.KeyStroke f8 = javax.swing.KeyStroke.getKeyStroke(KeyEvent.VK_F8, 0);
+        javax.swing.KeyStroke undoKey = javax.swing.KeyStroke.getKeyStroke(KeyEvent.VK_Z, java.awt.event.InputEvent.CTRL_DOWN_MASK);
+        javax.swing.InputMap keys = editor.getInputMap(javax.swing.JComponent.WHEN_FOCUSED);
+        assertEquals(List.of(standard), editor.getKeys(JCodeEditor.ACTION_FORMAT));
+
+        editor.setKeys(JCodeEditor.ACTION_FORMAT, f8, undoKey);
+        assertEquals(null, keys.get(standard), "the key it had no longer runs it");
+        assertEquals("format", keys.get(f8));
+        assertEquals("format", keys.get(undoKey), "a key taken from another action");
+        assertEquals(List.of(), editor.getKeys(JCodeEditor.ACTION_UNDO));
+
+        editor.setKeys(JCodeEditor.ACTION_FORMAT);
+        assertEquals(List.of(), editor.getKeys(JCodeEditor.ACTION_FORMAT), "no keys leaves it without any");
+        assertEquals(List.of(), editor.getKeys("no-such-action"));
+        org.junit.jupiter.api.Assertions.assertThrows(IllegalArgumentException.class, () -> editor.setKeys("no-such-action", f8));
     }
 
     @Test

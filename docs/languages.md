@@ -200,8 +200,8 @@ public final class MyLanguage implements Language {
 }
 ```
 
-`keywords()`, `lineComment()` and `blockComment()` have defaults for a language without them; override them
-for code completion and comment toggle.
+`keywords()`, `lineComment()`, `blockComment()` and `formatter()` have defaults for a language without them;
+override them for code completion, comment toggle and [format](format.md).
 
 ## Register a language
 

@@ -171,15 +171,33 @@ viewer.expandAllFolds();
 
 Ctrl is Command on macOS.
 
-| Key                  | What it does             |
-|----------------------|--------------------------|
-| Ctrl+C               | Copy                     |
-| Ctrl+A               | Select all               |
-| Ctrl+F               | Open the find bar        |
-| F3, Shift+F3         | Find next, find previous |
-| Ctrl+G               | Go to a line             |
-| Ctrl+Minus           | Collapse the fold        |
-| Ctrl+Equals          | Expand the fold          |
-| Ctrl+Shift+Equals    | Expand all the folds     |
+| Key                  | What it does             | Action                                     |
+|----------------------|--------------------------|--------------------------------------------|
+| Ctrl+C               | Copy                     | `ACTION_COPY`                              |
+| Ctrl+A               | Select all               | `ACTION_SELECT_ALL`                        |
+| Ctrl+F               | Open the find bar        | `ACTION_FIND`                              |
+| F3, Shift+F3         | Find next, find previous | `ACTION_FIND_NEXT`, `ACTION_FIND_PREVIOUS` |
+| Ctrl+G               | Go to a line             | `ACTION_GO_TO_LINE`                        |
+| Ctrl+Minus           | Collapse the fold        | `ACTION_COLLAPSE_FOLD`                     |
+| Ctrl+Equals          | Expand the fold          | `ACTION_EXPAND_FOLD`                       |
+| Ctrl+Shift+Equals    | Expand all the folds     | `ACTION_EXPAND_ALL_FOLDS`                  |
 
 The viewer has a popup menu with the main commands. Going to a line is not among them; it has its key, Ctrl+G.
+
+### Change the keys
+
+Each command is an action with a name, given in the last column as a constant of `JCodeViewer`. `setKeys`
+gives an action other keys in place of the ones it has:
+
+```java
+int ctrl = Toolkit.getDefaultToolkit().getMenuShortcutKeyMaskEx(); // Command on macOS
+
+editor.setKeys(JCodeEditor.ACTION_FORMAT, KeyStroke.getKeyStroke(KeyEvent.VK_F, ctrl | InputEvent.SHIFT_DOWN_MASK));
+editor.setKeys(JCodeViewer.ACTION_GO_TO_LINE);  // no keys: the command has none any more
+
+List<KeyStroke> keys = editor.getKeys(JCodeEditor.ACTION_FORMAT);
+```
+
+A key that ran another command runs the new one from then on. The popup menu shows the new key beside its
+item. `setKeys` throws an `IllegalArgumentException` for a name that is not an action; `ACTION_FIND` is one
+only after a find bar is attached.

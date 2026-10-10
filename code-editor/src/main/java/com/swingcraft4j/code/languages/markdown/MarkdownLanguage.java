@@ -1,5 +1,7 @@
 package com.swingcraft4j.code.languages.markdown;
 
+import com.swingcraft4j.code.format.Formatter;
+import com.swingcraft4j.code.format.MarkdownTableFormatter;
 import com.swingcraft4j.code.lexer.Language;
 import com.swingcraft4j.code.lexer.Lexer;
 
@@ -31,6 +33,12 @@ public final class MarkdownLanguage implements Language {
     @Override
     public String[] blockComment() {
         return new String[]{"<!--", "-->"};
+    }
+
+    /** Formatting aligns the tables, and changes nothing else. */
+    @Override
+    public Formatter formatter() {
+        return new MarkdownTableFormatter();
     }
 
     @Override

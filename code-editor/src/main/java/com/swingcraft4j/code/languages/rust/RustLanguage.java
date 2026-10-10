@@ -1,5 +1,7 @@
 package com.swingcraft4j.code.languages.rust;
 
+import com.swingcraft4j.code.format.BraceFormatter;
+import com.swingcraft4j.code.format.Formatter;
 import com.swingcraft4j.code.lexer.RuleLanguage;
 import com.swingcraft4j.code.lexer.TokenType;
 
@@ -32,5 +34,10 @@ public final class RustLanguage extends RuleLanguage {
                 .literals("true", "false")
                 .detectFunctions()
                 .capitalizedTypes());
+    }
+
+    @Override
+    public Formatter formatter() {
+        return BraceFormatter.of(this).generics().pointers().closureBars().build();
     }
 }

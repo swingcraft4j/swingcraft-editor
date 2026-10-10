@@ -49,6 +49,7 @@ The options of the viewer apply as well, such as `setLineWrap`, `setTabSize` and
 editor.replaceSelection("text");      // replaces the selection, or inserts at the caret
 editor.replaceRange(start, end, "x"); // replaces the chars from start to end
 editor.toggleComment();               // comments the selected lines, or uncomments them
+editor.format();                      // formats the selected lines, or the whole text
 editor.moveLinesUp();
 editor.moveLinesDown();
 editor.cut();
@@ -56,7 +57,7 @@ editor.paste();
 ```
 
 Each call is one step for undo. `toggleComment()` uses the line comment of the language, or its block comment
-if it has no line comment.
+if it has no line comment. `format()` uses the formatter of the language; see [Format](format.md).
 
 ## Undo and redo
 
@@ -119,15 +120,19 @@ only the lines that changed are measured and highlighted again.
 
 Ctrl is Command on macOS. The keys of the [viewer](viewer.md#keys) work too.
 
-| Key                          | What it does                                     |
-|------------------------------|--------------------------------------------------|
-| Ctrl+Z                       | Undo                                             |
-| Ctrl+Y, Ctrl+Shift+Z         | Redo                                             |
-| Ctrl+X, Ctrl+V               | Cut, paste                                       |
-| Tab, Shift+Tab               | Indent, unindent; with a selection, its lines    |
-| Ctrl+D                       | Duplicate the line, or the selected lines        |
-| Ctrl+/                       | Comment or uncomment the lines                   |
-| Alt+Up, Alt+Down             | Move the lines up or down                        |
-| Ctrl+Backspace, Ctrl+Delete  | Delete the word before or after the caret        |
+| Key                          | What it does                                     | Action                                           |
+|------------------------------|--------------------------------------------------|--------------------------------------------------|
+| Ctrl+Z                       | Undo                                             | `ACTION_UNDO`                                    |
+| Ctrl+Y, Ctrl+Shift+Z         | Redo                                             | `ACTION_REDO`                                    |
+| Ctrl+X, Ctrl+V               | Cut, paste                                       | `ACTION_CUT`, `ACTION_PASTE`                     |
+| Tab, Shift+Tab               | Indent, unindent; with a selection, its lines    | `"insert-tab"`, `"unindent"`                     |
+| Ctrl+D                       | Duplicate the line, or the selected lines        | `ACTION_DUPLICATE_LINES`                         |
+| Ctrl+/                       | Comment or uncomment the lines                   | `ACTION_TOGGLE_COMMENT`                          |
+| Shift+Alt+F                  | Format the selected lines, or the whole text     | `ACTION_FORMAT`                                  |
+| Alt+Up, Alt+Down             | Move the lines up or down                        | `ACTION_MOVE_LINES_UP`, `ACTION_MOVE_LINES_DOWN` |
+| Ctrl+Backspace, Ctrl+Delete  | Delete the word before or after the caret        | `"delete-previous-word"`, `"delete-next-word"`   |
 
 The editor has a popup menu with the main commands.
+
+To give a command other keys, see [Change the keys](viewer.md#change-the-keys). The constants in the last
+column are those of `JCodeEditor`.

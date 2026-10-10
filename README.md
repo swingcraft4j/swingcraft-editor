@@ -16,6 +16,7 @@ completion, and a preview of Markdown. The code editor has no dependencies.
 | Themes         | The colour themes, and how to make or adjust one                                  | [Themes](docs/themes.md)                |
 | Code completion | Suggestions, snippets, documentation and parameter hints                         | [Code completion](docs/autocomplete.md) |
 | Markers        | Errors and warnings underlined in the text and marked in the gutter               | [Markers](docs/markers.md)              |
+| Format         | Laying the text out afresh: indentation and spaces of code, JSON, tables of Markdown | [Format](docs/format.md)             |
 
 Website: https://www.swingcraft4j.com
 
@@ -31,6 +32,7 @@ Website: https://www.swingcraft4j.com
 - Eight colour themes, light and dark
 - Code completion with snippets, documentation and parameter hints, in a popup the user can resize
 - Error and warning markers
+- Format, for Java and ten other languages with braces, for JSON and for the tables of Markdown
 - A preview of Markdown, with tables, task lists and highlighted code blocks, in a module of its own
 - Large documents: only the visible rows are measured, tokenized and painted
 

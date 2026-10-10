@@ -1,5 +1,7 @@
 package com.swingcraft4j.code.languages.groovy;
 
+import com.swingcraft4j.code.format.BraceFormatter;
+import com.swingcraft4j.code.format.Formatter;
 import com.swingcraft4j.code.lexer.RuleLanguage;
 import com.swingcraft4j.code.lexer.TokenType;
 
@@ -27,5 +29,11 @@ public final class GroovyLanguage extends RuleLanguage {
                 .literals("true", "false", "null")
                 .detectFunctions()
                 .capitalizedTypes());
+    }
+
+    @Override
+    public Formatter formatter() {
+        return BraceFormatter.of(this).continuationIndent(2).generics().ternary().elvis().regexLiterals().noSemicolons()
+                .nestedContinuation().build();
     }
 }

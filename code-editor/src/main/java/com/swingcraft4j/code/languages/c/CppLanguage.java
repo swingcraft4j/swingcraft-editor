@@ -1,5 +1,7 @@
 package com.swingcraft4j.code.languages.c;
 
+import com.swingcraft4j.code.format.BraceFormatter;
+import com.swingcraft4j.code.format.Formatter;
 import com.swingcraft4j.code.lexer.RuleLanguage;
 
 /** C++: C with its own keywords. Raw string literals are read as ordinary strings. */
@@ -16,5 +18,11 @@ public final class CppLanguage extends RuleLanguage {
                         "try", "typeid", "typename", "using", "virtual")
                 .types("char8_t", "char16_t", "char32_t", "string", "vector", "map", "set")
                 .literals("nullptr"));
+    }
+
+    @Override
+    public Formatter formatter() {
+        return BraceFormatter.of(this).continuationIndent(2).generics().ternary().pointers().memberArrow().accessLabels()
+                .braceInitializers().build();
     }
 }

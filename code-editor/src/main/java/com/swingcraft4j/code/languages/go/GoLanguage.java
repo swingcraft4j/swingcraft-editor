@@ -1,5 +1,7 @@
 package com.swingcraft4j.code.languages.go;
 
+import com.swingcraft4j.code.format.BraceFormatter;
+import com.swingcraft4j.code.format.Formatter;
 import com.swingcraft4j.code.lexer.RuleLanguage;
 import com.swingcraft4j.code.lexer.TokenType;
 
@@ -26,5 +28,11 @@ public final class GoLanguage extends RuleLanguage {
                         "uint16", "uint32", "uint64", "uintptr")
                 .literals("true", "false", "nil", "iota")
                 .detectFunctions());
+    }
+
+    @Override
+    public Formatter formatter() {
+        return BraceFormatter.of(this).pointers().noSemicolons().caseAtSwitchLevel().braceInitializers()
+                .sliceColons().tabs().keepAlignment().maxBlankLines(1).build();
     }
 }

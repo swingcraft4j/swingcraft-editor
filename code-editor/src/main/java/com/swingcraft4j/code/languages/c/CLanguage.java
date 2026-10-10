@@ -1,5 +1,7 @@
 package com.swingcraft4j.code.languages.c;
 
+import com.swingcraft4j.code.format.BraceFormatter;
+import com.swingcraft4j.code.format.Formatter;
 import com.swingcraft4j.code.lexer.RuleLanguage;
 import com.swingcraft4j.code.lexer.TokenType;
 
@@ -30,5 +32,10 @@ public final class CLanguage extends RuleLanguage {
                 .literals("true", "false", "NULL")
                 .detectFunctions()
                 .capitalizedTypes();
+    }
+
+    @Override
+    public Formatter formatter() {
+        return BraceFormatter.of(this).continuationIndent(2).ternary().pointers().memberArrow().build();
     }
 }

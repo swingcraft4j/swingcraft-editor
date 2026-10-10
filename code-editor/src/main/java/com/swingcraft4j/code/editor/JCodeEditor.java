@@ -2,6 +2,8 @@ package com.swingcraft4j.code.editor;
 
 import com.swingcraft4j.code.editor.EditHistory.Edit;
 import com.swingcraft4j.code.editor.EditHistory.Kind;
+import com.swingcraft4j.code.format.FormatOptions;
+import com.swingcraft4j.code.format.Formatter;
 import com.swingcraft4j.code.layout.Cells;
 import com.swingcraft4j.code.lexer.Language;
 import com.swingcraft4j.code.text.EditableTextModel;
@@ -45,6 +47,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.IntSupplier;
+import java.util.regex.Pattern;
 
 /**
  * Source code editor: a {@link JCodeViewer} with a caret, keyboard input, the clipboard, and
@@ -56,12 +59,19 @@ import java.util.function.IntSupplier;
  */
 public class JCodeEditor extends JCodeViewer {
 
-    protected static final String ACTION_UNDO = "undo";
-    protected static final String ACTION_REDO = "redo";
-    protected static final String ACTION_CUT = "cut";
-    protected static final String ACTION_PASTE = "paste";
+    public static final String ACTION_UNDO = "undo";
+    public static final String ACTION_REDO = "redo";
+    public static final String ACTION_CUT = "cut";
+    public static final String ACTION_PASTE = "paste";
+    public static final String ACTION_FORMAT = "format";
+    public static final String ACTION_TOGGLE_COMMENT = "toggle-comment";
+    public static final String ACTION_DUPLICATE_LINES = "duplicate-lines";
+    public static final String ACTION_MOVE_LINES_UP = "move-lines-up";
+    public static final String ACTION_MOVE_LINES_DOWN = "move-lines-down";
 
     private static final int CARET_WIDTH = 2;
+    /** In a regular expression: the rest of the line is not all blanks. */
+    private static final String NOT_BLANK_AHEAD = "(?=[ \\t]*[^ \\t\\r\\n])";
     private static final String OPENING = "([{";
     private static final String CLOSING = ")]}";
     private static final String QUOTES = "\"'`";
@@ -116,8 +126,7 @@ public class JCodeEditor extends JCodeViewer {
         addFocusListener(new FocusListener() {
             @Override
             public void focusGained(FocusEvent e) {
-                caretOn = true;
-                blinkTimer.restart();
+                showCaret();
                 repaintCaret();
             }
 
@@ -193,9 +202,26 @@ public class JCodeEditor extends JCodeViewer {
         return editable;
     }
 
-    /** When false the text cannot be changed through the editor; the caret still moves. */
+    /**
+     * When false the text cannot be changed through the editor; the caret still moves, but it
+     * does not blink.
+     */
     public void setEditable(boolean editable) {
         this.editable = editable;
+        if (isFocusOwner()) {
+            showCaret();
+            repaintCaret();
+        }
+    }
+
+    /** Shows the caret, and blinks it only where it says that typing would change the text. */
+    private void showCaret() {
+        caretOn = true;
+        if (editable) {
+            blinkTimer.restart();
+        } else {
+            blinkTimer.stop();
+        }
     }
 
     public boolean isTabsToSpaces() {
@@ -245,6 +271,15 @@ public class JCodeEditor extends JCodeViewer {
     }
 
     private boolean replace(int start, int end, String text, Kind kind) {
+        if (!replaceInPlace(start, end, text, kind)) {
+            return false;
+        }
+        scrollCaretIntoView();
+        return true;
+    }
+
+    /** Makes an edit without scrolling to it. */
+    private boolean replaceInPlace(int start, int end, String text, Kind kind) {
         if (!editable) {
             Toolkit.getDefaultToolkit().beep();
             return false;
@@ -264,7 +299,6 @@ public class JCodeEditor extends JCodeViewer {
         }
         history.record(edit, kind);
         fireEdited();
-        scrollCaretIntoView();
         return true;
     }
 
@@ -737,6 +771,160 @@ public class JCodeEditor extends JCodeViewer {
         }
     }
 
+    /** Whether the language of the document has a formatter, so that {@link #format()} has something to do. */
+    public boolean canFormat() {
+        return getLanguage() != null && getLanguage().formatter() != null;
+    }
+
+    /**
+     * Lays the text out afresh with the formatter of the language: the lines touched by the
+     * selection, or the whole text when nothing is selected. Does nothing for a language without
+     * a formatter. One undo step, and only the part of the text that comes out different is
+     * replaced, so the caret stays with the text it was at and on the row of the screen it was on.
+     */
+    public void format() {
+        Formatter formatter = getLanguage() != null ? getLanguage().formatter() : null;
+        if (!editable || formatter == null) {
+            Toolkit.getDefaultToolkit().beep();
+            return;
+        }
+        finishComposition();
+        TextModel model = getModel();
+        boolean selection = getSelectionStart() != getSelectionEnd();
+        int[] lines = selectedLines();
+        int start = selection ? model.lineStart(lines[0]) : 0;
+        int end = selection ? model.lineEnd(lines[1]) : model.length();
+        String before = model.getText(start, end);
+        FormatOptions options = new FormatOptions(getTabSize(), !tabsToSpaces, lineSeparator());
+        String after = selection ? formatLines(formatter, before, options) : formatter.format(before, options);
+
+        int limit = Math.min(before.length(), after.length());
+        int head = 0;
+        while (head < limit && before.charAt(head) == after.charAt(head)) {
+            head++;
+        }
+        int tail = 0;
+        while (tail < limit - head && before.charAt(before.length() - 1 - tail) == after.charAt(after.length() - 1 - tail)) {
+            tail++;
+        }
+        int anchor = formattedOffset(getSelectionAnchor(), start, before, after);
+        int caret = formattedOffset(getCaretPosition(), start, before, after);
+        Rectangle visible = getVisibleRect();
+        int row = getOffsetBounds(getCaretPosition()).y;
+        if (replaceInPlace(start + head, end - tail, after.substring(head, after.length() - tail), Kind.OTHER)) {
+            selectQuietly(anchor, caret);
+            visible.y += getOffsetBounds(caret).y - row;
+            scrollRectToVisible(visible);
+        }
+    }
+
+    /**
+     * Formats lines taken from the middle of a text. The indentation they all share is taken
+     * off first and put back after, since a formatter indents from the margin.
+     */
+    private static String formatLines(Formatter formatter, String text, FormatOptions options) {
+        String indent = null;
+        for (String line : text.split("\\R")) {
+            if (line.isBlank()) {
+                continue;
+            }
+            int length = 0;
+            while (isBlank(line.charAt(length)) && (indent == null || (length < indent.length()
+                    && indent.charAt(length) == line.charAt(length)))) {
+                length++;
+            }
+            indent = line.substring(0, length);
+        }
+        if (indent == null || indent.isEmpty()) {
+            return formatter.format(text, options);
+        }
+        String flush = Pattern.compile("^" + indent + NOT_BLANK_AHEAD, Pattern.MULTILINE).matcher(text).replaceAll("");
+        String formatted = formatter.format(flush, options);
+        return Pattern.compile("^" + NOT_BLANK_AHEAD, Pattern.MULTILINE).matcher(formatted).replaceAll(indent);
+    }
+
+    /**
+     * Where an offset lies once the chars from {@code start} on, which were {@code before}, are
+     * {@code after}. Formatting keeps the chars that are not white space, so the two texts are
+     * read side by side by those: the offset goes after the one it was after, and stays in
+     * front of the one it was in front of.
+     */
+    private static int formattedOffset(int offset, int start, String before, String after) {
+        if (offset <= start) {
+            return offset;
+        }
+        if (offset >= start + before.length()) {
+            return offset + after.length() - before.length();
+        }
+        int at = offset - start;
+        int from = 0;
+        int to = 0;
+        while (from < at) {
+            char c = before.charAt(from);
+            if (Character.isWhitespace(c)) {
+                from++;
+                continue;
+            }
+            int next = skipWhitespace(after, to);
+            if (next == after.length()) {
+                to = next;
+                break;
+            }
+            if (after.charAt(next) == c) {
+                from++;
+                to = next + 1;
+                continue;
+            }
+            // Chars were added or taken away here, as the dashes of a table are: go on from the
+            // nearest place where the two texts agree again.
+            int added = indexNearby(after, c, next);
+            int removed = indexNearby(before, after.charAt(next), from);
+            if (added >= 0 && (removed < 0 || added - next <= removed - from)) {
+                to = added + 1;
+                from++;
+            } else if (removed >= 0) {
+                from = removed;
+            } else {
+                from++;
+            }
+        }
+        if (!Character.isWhitespace(before.charAt(at))) {
+            return start + skipWhitespace(after, to);
+        }
+        // In white space: as many lines below the text before it as it was, and as far into the line.
+        int breaks = 0;
+        int column = -1;
+        for (int i = at; i > 0 && Character.isWhitespace(before.charAt(i - 1)); i--) {
+            if (before.charAt(i - 1) == '\n') {
+                breaks++;
+                column = column < 0 ? at - i : column;
+            }
+        }
+        while (breaks > 0 && to < after.length() && Character.isWhitespace(after.charAt(to))) {
+            if (after.charAt(to++) == '\n') {
+                breaks--;
+            }
+        }
+        while (column-- > 0 && to < after.length() && isBlank(after.charAt(to))) {
+            to++;
+        }
+        return start + to;
+    }
+
+    private static int skipWhitespace(String text, int from) {
+        int index = from;
+        while (index < text.length() && Character.isWhitespace(text.charAt(index))) {
+            index++;
+        }
+        return index;
+    }
+
+    /** The index of a char at or shortly after {@code from}, or -1 if it is not near. */
+    private static int indexNearby(String text, char c, int from) {
+        int index = text.indexOf(c, from);
+        return index - from < 64 ? index : -1;
+    }
+
     /** Moves the lines touched by the selection up past the line above them. */
     public void moveLinesUp() {
         moveLines(-1);
@@ -799,8 +987,7 @@ public class JCodeEditor extends JCodeViewer {
             desiredX = -1;
         }
         if (isFocusOwner()) {
-            caretOn = true;
-            blinkTimer.restart();
+            showCaret();
         }
         super.selectionChanged();
     }
@@ -998,11 +1185,12 @@ public class JCodeEditor extends JCodeViewer {
                 KeyStroke.getKeyStroke(KeyEvent.VK_BACK_SPACE, word));
         bindAction("delete-next-word", () -> deleteTo(nextWord(getCaretPosition())),
                 KeyStroke.getKeyStroke(KeyEvent.VK_DELETE, word));
-        bindAction("duplicate-lines", this::duplicateLines, KeyStroke.getKeyStroke(KeyEvent.VK_D, menu));
-        bindAction("toggle-comment", this::toggleComment, KeyStroke.getKeyStroke(KeyEvent.VK_SLASH, menu),
+        bindAction(ACTION_DUPLICATE_LINES, this::duplicateLines, KeyStroke.getKeyStroke(KeyEvent.VK_D, menu));
+        bindAction(ACTION_TOGGLE_COMMENT, this::toggleComment, KeyStroke.getKeyStroke(KeyEvent.VK_SLASH, menu),
                 KeyStroke.getKeyStroke(KeyEvent.VK_DIVIDE, menu));
-        bindAction("move-lines-up", this::moveLinesUp, KeyStroke.getKeyStroke(KeyEvent.VK_UP, InputEvent.ALT_DOWN_MASK));
-        bindAction("move-lines-down", this::moveLinesDown, KeyStroke.getKeyStroke(KeyEvent.VK_DOWN, InputEvent.ALT_DOWN_MASK));
+        bindAction(ACTION_MOVE_LINES_UP, this::moveLinesUp, KeyStroke.getKeyStroke(KeyEvent.VK_UP, InputEvent.ALT_DOWN_MASK));
+        bindAction(ACTION_MOVE_LINES_DOWN, this::moveLinesDown, KeyStroke.getKeyStroke(KeyEvent.VK_DOWN, InputEvent.ALT_DOWN_MASK));
+        bindAction(ACTION_FORMAT, this::format, KeyStroke.getKeyStroke(KeyEvent.VK_F, InputEvent.SHIFT_DOWN_MASK | InputEvent.ALT_DOWN_MASK));
 
         bindAction(ACTION_UNDO, this::undo, KeyStroke.getKeyStroke(KeyEvent.VK_Z, menu));
         bindAction(ACTION_REDO, this::redo, KeyStroke.getKeyStroke(KeyEvent.VK_Y, menu),

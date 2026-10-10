@@ -1,5 +1,7 @@
 package com.swingcraft4j.code.languages.csharp;
 
+import com.swingcraft4j.code.format.BraceFormatter;
+import com.swingcraft4j.code.format.Formatter;
 import com.swingcraft4j.code.lexer.RuleLanguage;
 import com.swingcraft4j.code.lexer.TokenType;
 
@@ -34,5 +36,10 @@ public final class CSharpLanguage extends RuleLanguage {
                         "nuint", "object", "sbyte", "short", "string", "uint", "ulong", "ushort", "void")
                 .literals("true", "false", "null")
                 .detectFunctions());
+    }
+
+    @Override
+    public Formatter formatter() {
+        return BraceFormatter.of(this).generics().ternary().memberArrow().build();
     }
 }

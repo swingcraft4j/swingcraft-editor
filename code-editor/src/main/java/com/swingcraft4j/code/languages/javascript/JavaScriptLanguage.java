@@ -1,5 +1,7 @@
 package com.swingcraft4j.code.languages.javascript;
 
+import com.swingcraft4j.code.format.BraceFormatter;
+import com.swingcraft4j.code.format.Formatter;
 import com.swingcraft4j.code.lexer.RuleLanguage;
 
 /** JavaScript. Regular expression literals are not recognised and are read as operators and words. */
@@ -26,5 +28,10 @@ public final class JavaScriptLanguage extends RuleLanguage {
                 .literals("true", "false", "null", "undefined", "NaN", "Infinity")
                 .detectFunctions()
                 .capitalizedTypes();
+    }
+
+    @Override
+    public Formatter formatter() {
+        return BraceFormatter.of(this).ternary().regexLiterals().jsx().build();
     }
 }
