@@ -286,6 +286,17 @@ public class JCodeEditor extends JCodeViewer {
 
     /** Makes an edit without scrolling to it. */
     private boolean replaceInPlace(int start, int end, String text, Kind kind) {
+        return replaceInPlace(start, end, text, kind, -1, -1);
+    }
+
+    /**
+     * Makes an edit and leaves a selection of its own, in one step: those that listen to the
+     * caret are told once, of where it ends up, and not of a place it only passes.
+     *
+     * @param anchor the anchor of the selection after the edit, or -1 for the place after the new text
+     * @param caret  its caret, or -1 for the same
+     */
+    private boolean replaceInPlace(int start, int end, String text, Kind kind, int anchor, int caret) {
         if (!editable) {
             Toolkit.getDefaultToolkit().beep();
             return false;
@@ -300,7 +311,8 @@ public class JCodeEditor extends JCodeViewer {
         applying = true;
         try {
             model.replace(start, end, text);
-            select(start + text.length(), start + text.length());
+            int after = start + text.length();
+            select(anchor < 0 ? after : anchor, caret < 0 ? after : caret);
         } finally {
             applying = false;
         }
@@ -450,8 +462,8 @@ public class JCodeEditor extends JCodeViewer {
                 return false;
             }
             String inner = model.getText(start, end);
-            if (replace(start, end, c + inner + closing, Kind.OTHER)) {
-                selectQuietly(start + 1, start + 1 + inner.length());
+            if (replaceInPlace(start, end, c + inner + closing, Kind.OTHER, start + 1, start + 1 + inner.length())) {
+                scrollCaretIntoView();
             }
             return true;
         }
@@ -466,8 +478,10 @@ public class JCodeEditor extends JCodeViewer {
         boolean roomAfter = Character.isWhitespace(next) || ")]},;".indexOf(next) >= 0;
         boolean pairs = opening >= 0 || (quote && !Character.isLetterOrDigit(previous) && previous != '\\' && previous != c);
         if (roomAfter && pairs) {
-            if (replace(start, start, "" + c + closing, Kind.OTHER)) {
-                selectQuietly(start + 1, start + 1);
+            // the caret goes between the two at once: code completion takes a caret that moved
+            // on by one char for a char that was typed
+            if (replaceInPlace(start, start, "" + c + closing, Kind.OTHER, start + 1, start + 1)) {
+                scrollCaretIntoView();
             }
             return true;
         }

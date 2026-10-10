@@ -7,6 +7,8 @@ import com.swingcraft4j.code.text.GapTextModel;
 import org.junit.jupiter.api.Test;
 
 import java.awt.EventQueue;
+import java.awt.event.KeyEvent;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -224,5 +226,35 @@ class AutoCompletionTest {
             assertEquals(List.of("remoteValue"), offered(), "typing on narrows down what was received");
         });
         assertEquals(1, calls[0], "without asking the provider again");
+    }
+
+    @Test
+    void aTriggerCharAsksForSuggestionsAlsoWhenItIsTypedWithItsPartner() {
+        class Typed extends JCodeEditor {
+
+            void type(char c) {
+                processKeyEvent(new KeyEvent(this, KeyEvent.KEY_TYPED, 0, 0, KeyEvent.VK_UNDEFINED, c));
+            }
+        }
+        Typed typed = new Typed();
+        List<String> asked = new ArrayList<>();
+        new AutoCompletion(typed).addProvider(new CompletionProvider() {
+            @Override
+            public List<Completion> complete(CompletionRequest request) {
+                asked.add(request.lineBefore());
+                return List.of();
+            }
+
+            @Override
+            public String triggerCharacters() {
+                return "{";
+            }
+        });
+        typed.type('{');
+        assertEquals("{}", typed.getText(), "the editor closes the brace");
+        assertEquals(List.of("{"), asked);
+        typed.type('{');
+        assertEquals("{{}}", typed.getText());
+        assertEquals(List.of("{", "{{"), asked);
     }
 }

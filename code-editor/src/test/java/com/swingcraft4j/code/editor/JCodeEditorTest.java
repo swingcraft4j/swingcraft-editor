@@ -287,6 +287,21 @@ class JCodeEditorTest {
     }
 
     @Test
+    void aBracketTypedWithItsPartnerMovesTheCaretOnce() {
+        List<String> seen = new java.util.ArrayList<>();
+        editor.addSelectionListener(e -> seen.add(state()));
+        type("(");
+        assertEquals(List.of("(|)"), seen, "the caret is not seen after the partner on its way");
+        seen.clear();
+        editor.setText("word");
+        seen.clear();
+        editor.select(0, 4);
+        seen.clear();
+        type("\"");
+        assertEquals("\"^word|\"", seen.get(seen.size() - 1));
+    }
+
+    @Test
     void closesBracketsAndQuotesAsTheyAreTyped() {
         type("call(");
         assertEquals("call(|)", state());
