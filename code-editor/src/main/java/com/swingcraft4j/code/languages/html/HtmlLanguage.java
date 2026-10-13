@@ -1,5 +1,7 @@
 package com.swingcraft4j.code.languages.html;
 
+import com.swingcraft4j.code.format.Formatter;
+import com.swingcraft4j.code.format.TagFormatter;
 import com.swingcraft4j.code.languages.css.CssLanguage;
 import com.swingcraft4j.code.languages.javascript.JavaScriptLanguage;
 import com.swingcraft4j.code.lexer.Language;
@@ -35,6 +37,11 @@ public final class HtmlLanguage implements Language {
     @Override
     public String[] blockComment() {
         return new String[]{"<!--", "-->"};
+    }
+
+    @Override
+    public Formatter formatter() {
+        return TagFormatter.html();
     }
 
     @Override

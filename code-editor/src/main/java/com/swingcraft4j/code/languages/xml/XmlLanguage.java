@@ -1,5 +1,7 @@
 package com.swingcraft4j.code.languages.xml;
 
+import com.swingcraft4j.code.format.Formatter;
+import com.swingcraft4j.code.format.TagFormatter;
 import com.swingcraft4j.code.lexer.Language;
 import com.swingcraft4j.code.lexer.Lexer;
 
@@ -26,6 +28,11 @@ public final class XmlLanguage implements Language {
     @Override
     public String[] blockComment() {
         return new String[]{"<!--", "-->"};
+    }
+
+    @Override
+    public Formatter formatter() {
+        return TagFormatter.xml();
     }
 
     @Override

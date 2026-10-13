@@ -6,6 +6,7 @@ the language of the document, which gives a `Formatter` or none.
 - [Format the text](#format-the-text)
 - [Languages](#languages)
 - [Code with braces](#code-with-braces)
+- [XML and HTML](#xml-and-html)
 - [JSON](#json)
 - [Markdown tables](#markdown-tables)
 - [A formatter of your own](#a-formatter-of-your-own)
@@ -32,11 +33,12 @@ screen. The text is indented as the editor indents it: `setTabSize` and `setTabs
 | Language                                                                | What formatting does                                        |
 |-------------------------------------------------------------------------|-------------------------------------------------------------|
 | Java, JavaScript, TypeScript, C, C++, C#, Kotlin, Go, Rust, Groovy, CSS | Indents the lines and puts the spaces right                 |
+| XML, HTML                                                               | Puts each element on a line of its own, indented            |
 | JSON                                                                    | Puts each member and element on a line of its own, indented |
 | Markdown                                                                | Aligns the columns of the tables                            |
 
 Python and YAML have no formatter, since their indentation is their meaning. Neither have Shell, Dockerfile,
-INI, Properties, TOML and Env. HTML, XML, SQL and PHP have none yet.
+INI, Properties, TOML and Env. SQL and PHP have none yet.
 
 A language started from another with [`toBuilder()`](languages.md#more-words-for-a-language) is formatted as
 the one it started from: the scripts of an application in JavaScript with the names of its API are formatted
@@ -126,6 +128,43 @@ public Formatter formatter() {
 The methods of the builder say what the language has: `generics()`, `ternary()`, `pointers()`,
 `regexLiterals()`, `noSemicolons()`, `continuationIndent(levels)` and others; see the Javadoc of
 `BraceFormatter.Builder`.
+
+## XML and HTML
+
+```xml
+<order id="7"><item><name>Tea</name><qty>2</qty></item><note/></order>
+```
+
+becomes
+
+```xml
+<order id="7">
+    <item>
+        <name>Tea</name>
+        <qty>2</qty>
+    </item>
+    <note/>
+</order>
+```
+
+- White space may be text, so it is only changed between two tags that have nothing but white space between
+  them. An element with text of its own is written as it was found, with all that is in it: `<p>Hello <b>big</b>
+  world</p>` stays on its line. So is an element with nothing in it.
+- A tag is not changed inside: its attributes stay as they were written, also over several lines. Neither is a
+  comment, a processing instruction, a doctype or a `CDATA` section.
+- One blank line between two elements is kept; more than one becomes one.
+- Text whose tags do not match, or with a tag or a comment that is not closed, is left as it is.
+
+What is special in HTML:
+
+- The elements without an end tag are known: `<br>`, `<img>`, `<meta>` and the others.
+- `script`, `style`, `pre` and `textarea` are left as they are, with what is in them.
+- Elements that stand in a line of text, such as `<a>`, `<b>` and `<span>`, are not put on lines of their own,
+  since a line break between two of them shows as a space.
+- An element whose end tag is left out, as `<li>` may be, is not closed by the formatter: such a text is left
+  as it is.
+
+`TagFormatter.xml()` and `TagFormatter.html()` are the two formatters, for a language of your own with tags.
 
 ## JSON
 
