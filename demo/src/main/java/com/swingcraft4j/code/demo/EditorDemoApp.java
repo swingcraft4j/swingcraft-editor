@@ -12,26 +12,23 @@ import com.swingcraft4j.code.lexer.Languages;
 import com.swingcraft4j.code.text.ArrayTextModel;
 import com.swingcraft4j.code.text.GapTextModel;
 import com.swingcraft4j.code.text.TextModel;
-import com.swingcraft4j.code.theme.CodeTheme;
-import com.swingcraft4j.code.theme.CodeThemes;
 import com.swingcraft4j.code.viewer.JCodeFindBar;
 
-import javax.swing.BorderFactory;
-import javax.swing.Box;
-import javax.swing.JButton;
-import javax.swing.JCheckBox;
-import javax.swing.JComboBox;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
+import javax.swing.JMenu;
+import javax.swing.JMenuBar;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
-import javax.swing.JToolBar;
+import javax.swing.KeyStroke;
 import javax.swing.SwingWorker;
 import javax.swing.WindowConstants;
 import java.awt.BorderLayout;
 import java.awt.EventQueue;
+import java.awt.Toolkit;
+import java.awt.event.KeyEvent;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -48,13 +45,11 @@ public final class EditorDemoApp {
     private final JFrame frame = new JFrame("SwingCraft4j Editor - editor demo");
     private final JCodeEditor editor = new JCodeEditor();
     private final JLabel status = new JLabel(" ");
-    private final JComboBox<String> languages = new JComboBox<>();
+    /** A language picked here shows its sample. */
+    private final DemoMenus.LanguageMenu languages = new DemoMenus.LanguageMenu(null, this::showSample);
     private Path file;
     /** Extra text for the status bar about the document on show. */
     private String documentNote = "";
-    /** Set while the picker is changed to match a document, not by the user. */
-    private boolean syncingLanguages;
-
 
     public static void main(String[] args) {
         EventQueue.invokeLater(() -> {
@@ -64,81 +59,6 @@ public final class EditorDemoApp {
     }
 
     private void show() {
-        JButton open = new JButton("Open...");
-        open.addActionListener(e -> open());
-        JButton save = new JButton("Save");
-        save.addActionListener(e -> save());
-        JButton big = new JButton("1M lines");
-        big.addActionListener(e -> showGenerated());
-        JButton undo = new JButton("Undo");
-        undo.addActionListener(e -> editor.undo());
-        JButton redo = new JButton("Redo");
-        redo.addActionListener(e -> editor.redo());
-        for (JButton button : new JButton[]{open, save, big, undo, redo}) {
-            button.setFocusable(false); // keep the caret in the editor
-        }
-
-        JCheckBox wrap = new JCheckBox("Wrap");
-        wrap.addActionListener(e -> editor.setLineWrap(wrap.isSelected()));
-        JCheckBox words = new JCheckBox("At words");
-        words.setToolTipText("Break wrapped lines after a blank instead of anywhere");
-        words.addActionListener(e -> editor.setWrapStyleWord(words.isSelected()));
-        JCheckBox rounded = new JCheckBox("Rounded selection", true);
-        rounded.addActionListener(e -> editor.setRoundedSelection(rounded.isSelected()));
-        JComboBox<CodeTheme> themes = new JComboBox<>(CodeThemes.all().toArray(new CodeTheme[0]));
-        themes.setToolTipText("Theme");
-        themes.setMaximumSize(themes.getPreferredSize());
-        themes.addActionListener(e -> {
-            CodeTheme theme = (CodeTheme) themes.getSelectedItem();
-            editor.setTheme(theme);
-            DemoLookAndFeel.follow(theme);
-        });
-        // start on the theme the component picked for the Look and Feel
-        for (int i = 0; i < themes.getItemCount(); i++) {
-            if (themes.getItemAt(i).name().equals(editor.getTheme().name())) {
-                themes.setSelectedIndex(i);
-            }
-        }
-        JCheckBox readOnly = new JCheckBox("Read only");
-        readOnly.addActionListener(e -> editor.setEditable(!readOnly.isSelected()));
-        JCheckBox markerDots = new JCheckBox("Marker dots", true);
-        markerDots.setToolTipText("Put a dot in the gutter on a line with a problem");
-        markerDots.addActionListener(e -> editor.setMarkerDots(markerDots.isSelected()));
-        for (JCheckBox box : new JCheckBox[]{wrap, words, rounded, readOnly, markerDots}) {
-            box.setFocusable(false); // keep the caret in the editor
-        }
-
-        for (Language language : Languages.installed()) {
-            languages.addItem(language.displayName());
-        }
-        languages.setMaximumSize(languages.getPreferredSize());
-        languages.addActionListener(e -> {
-            if (!syncingLanguages) {
-                showSample(selectedLanguage());
-            }
-        });
-
-        JToolBar toolBar = new JToolBar();
-        toolBar.setFloatable(false);
-        toolBar.setBorder(BorderFactory.createEmptyBorder(DemoFonts.GAP, DemoFonts.GAP, DemoFonts.GAP, DemoFonts.GAP));
-        toolBar.add(open);
-        toolBar.add(save);
-        toolBar.add(big);
-        toolBar.addSeparator();
-        toolBar.add(undo);
-        toolBar.add(redo);
-        toolBar.addSeparator();
-        toolBar.add(wrap);
-        toolBar.add(words);
-        toolBar.add(rounded);
-        toolBar.add(readOnly);
-        toolBar.add(markerDots);
-        toolBar.addSeparator();
-        toolBar.add(languages);
-        toolBar.add(Box.createHorizontalStrut(DemoFonts.GAP));
-        toolBar.add(themes);
-        DemoFonts.addTo(toolBar, editor);
-
         editor.addSelectionListener(e -> showPosition());
         // a star in the title while there are changes that have not been saved
         editor.addPropertyChangeListener("modified", e -> showTitle());
@@ -153,7 +73,7 @@ public final class EditorDemoApp {
         JPanel south = new JPanel(new BorderLayout());
         south.add(new JCodeFindBar(editor), BorderLayout.NORTH);
         south.add(status, BorderLayout.SOUTH);
-        frame.add(toolBar, BorderLayout.NORTH);
+        frame.setJMenuBar(menuBar()); // after the find bar, which gives the editor the action that opens it
         frame.add(new JScrollPane(editor), BorderLayout.CENTER);
         frame.add(south, BorderLayout.SOUTH);
         frame.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
@@ -161,15 +81,58 @@ public final class EditorDemoApp {
         frame.setLocationRelativeTo(null);
         frame.setVisible(true);
 
-        showSample(selectedLanguage());
+        Language first = Languages.installed().get(0);
+        languages.select(first);
+        showSample(first);
         editor.requestFocusInWindow();
     }
 
-    private Language selectedLanguage() {
-        Object name = languages.getSelectedItem();
-        return Languages.installed().stream()
-                .filter(language -> language.displayName().equals(name))
-                .findFirst().orElse(null);
+    private JMenuBar menuBar() {
+        int menuKey = Toolkit.getDefaultToolkit().getMenuShortcutKeyMaskEx();
+        JMenu file = DemoMenus.menu("File", 'F');
+        file.add(DemoMenus.item("Open...", KeyStroke.getKeyStroke(KeyEvent.VK_O, menuKey), this::open));
+        file.add(DemoMenus.item("Save", KeyStroke.getKeyStroke(KeyEvent.VK_S, menuKey), this::save));
+        file.addSeparator();
+        file.add(DemoMenus.item("Generate 1M Lines", null, this::showGenerated));
+
+        JMenu edit = DemoMenus.menu("Edit", 'E');
+        edit.add(DemoMenus.item("Undo", editor, JCodeEditor.ACTION_UNDO));
+        edit.add(DemoMenus.item("Redo", editor, JCodeEditor.ACTION_REDO));
+        edit.addSeparator();
+        edit.add(DemoMenus.item("Cut", editor, JCodeEditor.ACTION_CUT));
+        edit.add(DemoMenus.item("Copy", editor, JCodeEditor.ACTION_COPY));
+        edit.add(DemoMenus.item("Paste", editor, JCodeEditor.ACTION_PASTE));
+        edit.add(DemoMenus.item("Select All", editor, JCodeEditor.ACTION_SELECT_ALL));
+        edit.addSeparator();
+        edit.add(DemoMenus.item("Find...", editor, JCodeEditor.ACTION_FIND));
+        edit.add(DemoMenus.item("Go to Line...", editor, JCodeEditor.ACTION_GO_TO_LINE));
+        edit.addSeparator();
+        edit.add(DemoMenus.item("Format", editor, JCodeEditor.ACTION_FORMAT));
+        edit.add(DemoMenus.item("Toggle Comment", editor, JCodeEditor.ACTION_TOGGLE_COMMENT));
+        edit.add(DemoMenus.item("Duplicate Lines", editor, JCodeEditor.ACTION_DUPLICATE_LINES));
+        edit.addSeparator();
+        edit.add(DemoMenus.option("Read Only", !editor.isEditable(), on -> editor.setEditable(!on)));
+
+        JMenu view = DemoMenus.view(editor);
+        view.add(DemoMenus.option("Current Line", editor.isHighlightCurrentLine(), editor::setHighlightCurrentLine));
+
+        // the problems the linter of the demo finds
+        JMenu markers = DemoMenus.menu("Markers", 'M');
+        markers.add(DemoMenus.item("Next Marker", editor, JCodeEditor.ACTION_NEXT_MARKER));
+        markers.add(DemoMenus.item("Previous Marker", editor, JCodeEditor.ACTION_PREVIOUS_MARKER));
+        markers.addSeparator();
+        markers.add(DemoMenus.option("Dots in the Gutter", editor.isMarkerDots(), editor::setMarkerDots));
+        markers.add(DemoMenus.option("Stripe at the Right", editor.isMarkerStripe(), editor::setMarkerStripe));
+
+        JMenuBar menuBar = new JMenuBar();
+        menuBar.add(file);
+        menuBar.add(edit);
+        menuBar.add(view);
+        menuBar.add(markers);
+        menuBar.add(languages.menu());
+        menuBar.add(DemoMenus.themes(editor.getTheme(), editor::setTheme));
+        menuBar.add(DemoMenus.fonts(editor));
+        return menuBar;
     }
 
     private void showSample(Language language) {
@@ -183,17 +146,13 @@ public final class EditorDemoApp {
         }
     }
 
-    /** Shows a document and brings the language picker and the status bar in line with it. */
+    /** Shows a document and brings the language menu and the status bar in line with it. */
     private void showDocument(TextModel model, Language language, Path source) {
         file = source;
         documentNote = "";
         editor.setDocument(model, language);
         showTitle();
-        if (language != null) {
-            syncingLanguages = true;
-            languages.setSelectedItem(language.displayName());
-            syncingLanguages = false;
-        }
+        languages.select(language);
         showPosition();
         editor.requestFocusInWindow();
     }

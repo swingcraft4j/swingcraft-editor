@@ -34,8 +34,8 @@ final class DemoLookAndFeel {
 
     /** Switches every window between light and dark when the code theme calls for the other one. */
     static void follow(CodeTheme theme) {
-        // Not at once: the theme is picked from a combo box, and a new Look and Feel takes the
-        // combo box away from under the key or the click that is still being handled.
+        // Not at once: the theme is picked from a menu, and a new Look and Feel takes the
+        // menu away from under the key or the click that is still being handled.
         EventQueue.invokeLater(() -> {
             if (theme.isDark() != FlatLaf.isLafDark()) {
                 if (theme.isDark()) {

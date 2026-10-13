@@ -16,17 +16,17 @@ import com.swingcraft4j.code.theme.CodeTheme;
 
 import javax.swing.BorderFactory;
 import javax.swing.JButton;
-import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
+import javax.swing.JMenu;
+import javax.swing.JMenuBar;
 import javax.swing.JPanel;
 import javax.swing.JTextField;
 import javax.swing.WindowConstants;
 import java.awt.BorderLayout;
 import java.awt.Component;
 import java.awt.EventQueue;
-import java.awt.FlowLayout;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
@@ -101,19 +101,14 @@ public final class FieldDemoApp {
         regex.getEditor().addEditListener(e -> checkRegex());
         regex.addActionListener(e -> checkRegex());
 
-        JCheckBox editable = new JCheckBox("Editable", true);
-        editable.addActionListener(e -> fields.forEach(field -> field.setEditable(editable.isSelected())));
-        JCheckBox enabled = new JCheckBox("Enabled", true);
-        enabled.addActionListener(e -> fields.forEach(field -> field.setEnabled(enabled.isSelected())));
-        JCheckBox dark = new JCheckBox("Dark");
-        dark.addActionListener(e -> useTheme(dark.isSelected() ? CodeTheme.dark() : CodeTheme.light()));
-        for (JCheckBox box : new JCheckBox[]{editable, enabled, dark}) {
-            box.setFocusable(false); // keep the caret in the field
-        }
-        JPanel options = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 0));
-        options.add(editable);
-        options.add(enabled);
-        options.add(dark);
+        JMenu options = DemoMenus.menu("Options", 'O');
+        options.add(DemoMenus.option("Editable", true, on -> fields.forEach(field -> field.setEditable(on))));
+        options.add(DemoMenus.option("Enabled", true, on -> fields.forEach(field -> field.setEnabled(on))));
+        options.addSeparator();
+        options.add(DemoMenus.option("Dark", false, on -> useTheme(on ? CodeTheme.dark() : CodeTheme.light())));
+        JMenuBar menuBar = new JMenuBar();
+        menuBar.add(options);
+        frame.setJMenuBar(menuBar);
 
         JPanel form = new JPanel(new GridBagLayout());
         form.setBorder(BorderFactory.createEmptyBorder(12, 12, 12, 12));
@@ -122,7 +117,6 @@ public final class FieldDemoApp {
         addRow(form, "JSON", json);
         addRow(form, "Regex", regex);
         addRow(form, "Text field", new JTextField("A JTextField, to compare"));
-        addRow(form, "", options);
 
         status.setBorder(BorderFactory.createEmptyBorder(2, 6, 2, 6));
         frame.add(form, BorderLayout.NORTH);

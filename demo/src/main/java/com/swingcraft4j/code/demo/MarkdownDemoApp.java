@@ -3,17 +3,13 @@ package com.swingcraft4j.code.demo;
 import com.swingcraft4j.code.autocomplete.AutoCompletion;
 import com.swingcraft4j.code.editor.JCodeEditor;
 import com.swingcraft4j.code.lexer.Languages;
-import com.swingcraft4j.code.theme.CodeTheme;
-import com.swingcraft4j.code.theme.CodeThemes;
 import com.swingcraft4j.markdown.JMarkdownPreview;
 
-import javax.swing.BorderFactory;
-import javax.swing.JComboBox;
 import javax.swing.JFrame;
+import javax.swing.JMenuBar;
 import javax.swing.JOptionPane;
 import javax.swing.JScrollPane;
 import javax.swing.JSplitPane;
-import javax.swing.JToolBar;
 import javax.swing.WindowConstants;
 import java.awt.BorderLayout;
 import java.awt.EventQueue;
@@ -37,28 +33,6 @@ public final class MarkdownDemoApp {
     }
 
     private void show() {
-        JComboBox<CodeTheme> themes = new JComboBox<>(CodeThemes.all().toArray(new CodeTheme[0]));
-        themes.setToolTipText("Theme");
-        themes.setFocusable(false);
-        themes.setMaximumSize(themes.getPreferredSize());
-        themes.addActionListener(e -> {
-            CodeTheme theme = (CodeTheme) themes.getSelectedItem();
-            // the preview takes the theme from the editor, for its code blocks
-            editor.setTheme(theme);
-            DemoLookAndFeel.follow(theme);
-        });
-        for (int i = 0; i < themes.getItemCount(); i++) {
-            if (themes.getItemAt(i).name().equals(editor.getTheme().name())) {
-                themes.setSelectedIndex(i);
-            }
-        }
-
-        JToolBar toolBar = new JToolBar();
-        toolBar.setFloatable(false);
-        toolBar.setBorder(BorderFactory.createEmptyBorder(DemoFonts.GAP, DemoFonts.GAP, DemoFonts.GAP, DemoFonts.GAP));
-        toolBar.add(themes);
-        DemoFonts.addTo(toolBar, editor);
-
         editor.setLineWrap(true);
         editor.setWrapStyleWord(true);
         editor.setLanguage(Languages.byId("markdown").orElse(null));
@@ -74,7 +48,11 @@ public final class MarkdownDemoApp {
 
         JSplitPane split = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, new JScrollPane(editor), new JScrollPane(preview));
         split.setResizeWeight(0.5);
-        frame.add(toolBar, BorderLayout.NORTH);
+        JMenuBar menuBar = new JMenuBar();
+        // the preview takes the theme from the editor, for its code blocks
+        menuBar.add(DemoMenus.themes(editor.getTheme(), editor::setTheme));
+        menuBar.add(DemoMenus.fonts(editor));
+        frame.setJMenuBar(menuBar);
         frame.add(split, BorderLayout.CENTER);
         frame.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
         frame.setSize(1200, 760);
