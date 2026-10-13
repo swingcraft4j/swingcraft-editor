@@ -6,8 +6,11 @@ import com.swingcraft4j.code.theme.CodeTheme;
 import com.swingcraft4j.code.marker.Severity;
 
 import javax.swing.JComponent;
+import javax.swing.Timer;
 import javax.swing.ToolTipManager;
+import java.awt.AlphaComposite;
 import java.awt.BasicStroke;
+import java.awt.Composite;
 import java.awt.Cursor;
 import java.awt.Dimension;
 import java.awt.Graphics;
@@ -20,14 +23,23 @@ import java.awt.geom.Path2D;
 
 /**
  * Line numbers, and next to them the arrows that collapse and expand folds, shown as the row
- * header of the scroll pane holding a {@link JCodeViewer}.
+ * header of the scroll pane holding a {@link JCodeViewer}. The arrows of the open folds are
+ * there only while the mouse is over the gutter, and fade in and out; that of a collapsed fold
+ * stays.
  */
 final class LineNumberGutter extends JComponent {
 
     /** The space between the fold arrows and the edge of the gutter. */
     private static final int FOLD_PAD_RIGHT = 4;
+    /** How long the arrows of the open folds take to fade in or out. */
+    private static final long FADE_NANOS = 150_000_000;
 
     private final JCodeViewer viewer;
+    private boolean hovered;
+    /** How much of the arrows of the open folds shows: from 0, when they are not there, to 1. */
+    private float arrowAlpha;
+    private long fadeTime;
+    private final Timer fadeTimer = new Timer(15, e -> fade());
 
     LineNumberGutter(JCodeViewer viewer) {
         this.viewer = viewer;
@@ -42,6 +54,16 @@ final class LineNumberGutter extends JComponent {
             }
 
             @Override
+            public void mouseEntered(MouseEvent e) {
+                setHovered(true);
+            }
+
+            @Override
+            public void mouseExited(MouseEvent e) {
+                setHovered(false);
+            }
+
+            @Override
             public void mouseMoved(MouseEvent e) {
                 setCursor(foldableLineAt(e) >= 0 ? Cursor.getPredefinedCursor(Cursor.HAND_CURSOR) : null);
             }
@@ -49,6 +71,28 @@ final class LineNumberGutter extends JComponent {
         addMouseListener(mouse);
         addMouseMotionListener(mouse);
         ToolTipManager.sharedInstance().registerComponent(this);
+    }
+
+    private void setHovered(boolean hovered) {
+        if (hovered != this.hovered) {
+            this.hovered = hovered;
+            fadeTime = System.nanoTime();
+            fadeTimer.start();
+        }
+    }
+
+    /** Brings the arrows of the open folds a step closer to shown or to hidden, by the time that has passed. */
+    private void fade() {
+        long now = System.nanoTime();
+        float step = (float) (now - fadeTime) / FADE_NANOS;
+        fadeTime = now;
+        arrowAlpha = hovered ? Math.min(1, arrowAlpha + step) : Math.max(0, arrowAlpha - step);
+        if (arrowAlpha == (hovered ? 1 : 0)) {
+            fadeTimer.stop();
+        }
+        int foldWidth = foldColumnWidth();
+        Rectangle visible = getVisibleRect();
+        repaint(getWidth() - 1 - foldWidth, visible.y, foldWidth, visible.height);
     }
 
     /** Width of the column holding the marks for lines with markers, at the left edge; none while there are no markers. */
@@ -143,13 +187,18 @@ final class LineNumberGutter extends JComponent {
                     g.fillOval(3, viewer.rowY(row) + (lineHeight - size) / 2, size, size);
                     g.setColor(theme.gutterForeground());
                 }
-                if (foldWidth > 0 && viewer.isFoldable(line)) {
+                boolean collapsed = viewer.isCollapsed(line);
+                if (foldWidth > 0 && viewer.isFoldable(line) && (collapsed || arrowAlpha > 0)) {
                     // centred on a pixel and a whole number of pixels in size, so that the
                     // two halves are the same and every arrow is like the others
                     int centerX = width - 1 - FOLD_PAD_RIGHT - (foldWidth - FOLD_PAD_RIGHT) / 2;
                     int centerY = viewer.rowY(row) + lineHeight / 2;
-                    paintArrow(g, centerX + 0.5, centerY + 0.5,
-                            Math.max(3, Math.round(lineHeight / 5.0)), viewer.isCollapsed(line));
+                    Composite opaque = g.getComposite();
+                    if (!collapsed) {
+                        g.setComposite(AlphaComposite.SrcOver.derive(arrowAlpha));
+                    }
+                    paintArrow(g, centerX + 0.5, centerY + 0.5, Math.max(3, Math.round(lineHeight / 5.0)), collapsed);
+                    g.setComposite(opaque);
                 }
             }
         } finally {

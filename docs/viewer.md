@@ -187,8 +187,9 @@ Lines are counted from zero in the methods, so line 120 of the gutter is `119`.
 ## Folding
 
 A line is foldable when the lines after it are indented more. A click on the arrow in the gutter collapses it.
-A collapsed fold shows a `...` mark after its first line, and a click on the mark expands it again. The
-colours of the mark are part of the [theme](themes.md#a-theme-of-your-own).
+The arrows fade in when the mouse comes over the gutter and out when it leaves; the arrow of a collapsed fold
+stays. A collapsed fold shows a `...` mark after its first line, and a click on the mark expands it again.
+The colours of the mark are part of the [theme](themes.md#a-theme-of-your-own).
 
 From code:
 
