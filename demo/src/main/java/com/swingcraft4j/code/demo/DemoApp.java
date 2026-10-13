@@ -9,6 +9,7 @@ import com.swingcraft4j.code.theme.CodeThemes;
 import com.swingcraft4j.code.viewer.JCodeFindBar;
 import com.swingcraft4j.code.viewer.JCodeViewer;
 
+import javax.swing.AbstractButton;
 import javax.swing.BorderFactory;
 import javax.swing.Box;
 import javax.swing.JButton;
@@ -89,6 +90,9 @@ public final class DemoApp {
         }
         JCheckBox lineNumbers = new JCheckBox("Line numbers", true);
         lineNumbers.addActionListener(e -> viewer.setLineNumbersVisible(lineNumbers.isSelected()));
+        for (AbstractButton button : new AbstractButton[]{sample, open, big, wrap, words, rounded, lineNumbers}) {
+            button.setFocusable(false); // keep the caret in the viewer
+        }
 
         languages.addItem(PLAIN_TEXT);
         for (Language language : Languages.installed()) {
@@ -127,6 +131,7 @@ public final class DemoApp {
         frame.setVisible(true);
 
         loadSample(java);
+        viewer.requestFocusInWindow();
     }
 
     /** Shows the sample of the chosen language, or only re-highlights a document of the user's own. */

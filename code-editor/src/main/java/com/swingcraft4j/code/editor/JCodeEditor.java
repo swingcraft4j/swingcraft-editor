@@ -47,7 +47,6 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.function.IntSupplier;
 import java.util.regex.Pattern;
 
 /**
@@ -75,7 +74,6 @@ public class JCodeEditor extends JCodeViewer {
     private static final String OPENING = "([{";
     private static final String CLOSING = ")]}";
     private static final String QUOTES = "\"'`";
-    private static final boolean MAC = System.getProperty("os.name", "").toLowerCase().contains("mac");
 
     private boolean editable = true;
     private boolean tabsToSpaces = true;
@@ -84,9 +82,6 @@ public class JCodeEditor extends JCodeViewer {
     private boolean caretOn;
     /** Set while the editor itself changes the model or restores a selection. */
     private boolean applying;
-    /** Set while the caret moves up or down, which keeps the column it is aiming for. */
-    private boolean keepColumn;
-    private int desiredX = -1;
 
     private final EditHistory history = new EditHistory();
     private final List<ChangeListener> editListeners = new CopyOnWriteArrayList<>();
@@ -1009,158 +1004,10 @@ public class JCodeEditor extends JCodeViewer {
         if (!applying) {
             history.closeGroup();
         }
-        if (!keepColumn) {
-            desiredX = -1;
-        }
         if (isFocusOwner()) {
             showCaret();
         }
         super.selectionChanged();
-    }
-
-    private void moveCaret(int target, boolean extend) {
-        select(extend ? getSelectionAnchor() : target, target);
-        scrollCaretIntoView();
-    }
-
-    private void moveVertically(int rows, boolean extend) {
-        Rectangle caret = getOffsetBounds(getCaretPosition());
-        if (desiredX < 0) {
-            desiredX = caret.x;
-        }
-        int y = caret.y + rows * getRowHeight();
-        int target;
-        // above the first row or below the last one, not counting the padding around the text
-        if (y < getOffsetBounds(0).y) {
-            target = 0;
-        } else if (y > getOffsetBounds(getModel().length()).y) {
-            target = getModel().length();
-        } else {
-            target = offsetAt(desiredX, y);
-        }
-        keepColumn = true;
-        try {
-            moveCaret(target, extend);
-        } finally {
-            keepColumn = false;
-        }
-    }
-
-    private int visibleRows() {
-        return Math.max(1, getVisibleRect().height / getRowHeight() - 1);
-    }
-
-    private void scrollCaretIntoView() {
-        Rectangle caret = getOffsetBounds(getCaretPosition());
-        int margin = caret.width * 4;
-        int left = Math.max(0, caret.x - margin);
-        scrollRectToVisible(new Rectangle(left, caret.y, caret.x + margin - left, caret.height));
-    }
-
-    private int previousOffset(int offset) {
-        TextModel model = getModel();
-        if (offset == 0) {
-            return 0;
-        }
-        int previous = offset - 1;
-        if (model.charAt(previous) == '\n' && previous > 0 && model.charAt(previous - 1) == '\r') {
-            return previous - 1;
-        }
-        // step over a whole cluster: marks, joined letters, the halves of a surrogate pair
-        while (previous > 0 && Cells.isClusterContinuation(model.charAt(previous - 1), model.charAt(previous))) {
-            previous--;
-        }
-        return previous;
-    }
-
-    private int nextOffset(int offset) {
-        TextModel model = getModel();
-        int length = model.length();
-        if (offset >= length) {
-            return length;
-        }
-        int next = offset + 1;
-        if (model.charAt(offset) == '\r' && next < length && model.charAt(next) == '\n') {
-            return next + 1;
-        }
-        while (next < length && Cells.isClusterContinuation(model.charAt(next - 1), model.charAt(next))) {
-            next++;
-        }
-        return next;
-    }
-
-    /** 0 for blanks, 1 for word chars, 2 for other chars, 3 for line terminators. */
-    private static int charClass(char c) {
-        if (c == '\n' || c == '\r') {
-            return 3;
-        }
-        if (isBlank(c)) {
-            return 0;
-        }
-        return Character.isLetterOrDigit(c) || c == '_' ? 1 : 2;
-    }
-
-    private static boolean isBlank(char c) {
-        return c == ' ' || c == '\t';
-    }
-
-    /** The start of the next word: past the run of chars at the offset and the blanks after it. */
-    private int nextWord(int offset) {
-        TextModel model = getModel();
-        int length = model.length();
-        if (offset >= length) {
-            return length;
-        }
-        int kind = charClass(model.charAt(offset));
-        if (kind == 3) {
-            return nextOffset(offset);
-        }
-        int next = offset;
-        while (next < length && charClass(model.charAt(next)) == kind) {
-            next++;
-        }
-        while (next < length && charClass(model.charAt(next)) == 0) {
-            next++;
-        }
-        return next;
-    }
-
-    /** The start of the word before the offset. */
-    private int previousWord(int offset) {
-        TextModel model = getModel();
-        if (offset == 0) {
-            return 0;
-        }
-        if (charClass(model.charAt(offset - 1)) == 3) {
-            return previousOffset(offset);
-        }
-        int previous = offset;
-        while (previous > 0 && charClass(model.charAt(previous - 1)) == 0) {
-            previous--;
-        }
-        if (previous > 0) {
-            int kind = charClass(model.charAt(previous - 1));
-            while (kind != 3 && previous > 0 && charClass(model.charAt(previous - 1)) == kind) {
-                previous--;
-            }
-        }
-        return previous;
-    }
-
-    /** The first non-blank char of the caret's line, or the start of the line if the caret is already there. */
-    private int smartHome() {
-        TextModel model = getModel();
-        int line = model.lineOfOffset(getCaretPosition());
-        int start = model.lineStart(line);
-        int text = start;
-        while (text < model.lineEnd(line) && isBlank(model.charAt(text))) {
-            text++;
-        }
-        return getCaretPosition() == text ? start : text;
-    }
-
-    private int lineEnd() {
-        return getModel().lineEnd(getModel().lineOfOffset(getCaretPosition()));
     }
 
     // ---- Keys ----
@@ -1188,19 +1035,6 @@ public class JCodeEditor extends JCodeViewer {
         int shift = InputEvent.SHIFT_DOWN_MASK;
         int word = MAC ? InputEvent.ALT_DOWN_MASK : InputEvent.CTRL_DOWN_MASK;
 
-        bindMove("caret-left", KeyEvent.VK_LEFT, 0, () -> previousOffset(getCaretPosition()), this::getSelectionStart);
-        bindMove("caret-right", KeyEvent.VK_RIGHT, 0, () -> nextOffset(getCaretPosition()), this::getSelectionEnd);
-        bindMove("caret-previous-word", KeyEvent.VK_LEFT, word, () -> previousWord(getCaretPosition()), null);
-        bindMove("caret-next-word", KeyEvent.VK_RIGHT, word, () -> nextWord(getCaretPosition()), null);
-        bindMove("caret-line-start", KeyEvent.VK_HOME, 0, this::smartHome, null);
-        bindMove("caret-line-end", KeyEvent.VK_END, 0, this::lineEnd, null);
-        bindMove("caret-document-start", KeyEvent.VK_HOME, menu, () -> 0, null);
-        bindMove("caret-document-end", KeyEvent.VK_END, menu, () -> getModel().length(), null);
-        bindVertical("caret-up", KeyEvent.VK_UP, () -> -1);
-        bindVertical("caret-down", KeyEvent.VK_DOWN, () -> 1);
-        bindVertical("caret-page-up", KeyEvent.VK_PAGE_UP, () -> -visibleRows());
-        bindVertical("caret-page-down", KeyEvent.VK_PAGE_DOWN, this::visibleRows);
-
         bindAction("insert-break", this::insertLineBreak, KeyStroke.getKeyStroke(KeyEvent.VK_ENTER, 0),
                 KeyStroke.getKeyStroke(KeyEvent.VK_ENTER, shift));
         bindAction("insert-tab", this::insertTab, KeyStroke.getKeyStroke(KeyEvent.VK_TAB, 0));
@@ -1226,26 +1060,6 @@ public class JCodeEditor extends JCodeViewer {
                 KeyStroke.getKeyStroke(KeyEvent.VK_DELETE, shift));
         bindAction(ACTION_PASTE, this::paste, KeyStroke.getKeyStroke(KeyEvent.VK_V, menu),
                 KeyStroke.getKeyStroke(KeyEvent.VK_INSERT, shift));
-    }
-
-    /**
-     * Binds a caret movement and, with Shift, the same movement extending the selection.
-     *
-     * @param collapse where the caret goes instead when a selection is dropped, or null to move as usual
-     */
-    private void bindMove(String name, int keyCode, int modifiers, IntSupplier target, IntSupplier collapse) {
-        bindAction(name, () -> {
-            boolean selection = getSelectionStart() != getSelectionEnd();
-            moveCaret(selection && collapse != null ? collapse.getAsInt() : target.getAsInt(), false);
-        }, KeyStroke.getKeyStroke(keyCode, modifiers));
-        bindAction("select-" + name, () -> moveCaret(target.getAsInt(), true),
-                KeyStroke.getKeyStroke(keyCode, modifiers | InputEvent.SHIFT_DOWN_MASK));
-    }
-
-    private void bindVertical(String name, int keyCode, IntSupplier rows) {
-        bindAction(name, () -> moveVertically(rows.getAsInt(), false), KeyStroke.getKeyStroke(keyCode, 0));
-        bindAction("select-" + name, () -> moveVertically(rows.getAsInt(), true),
-                KeyStroke.getKeyStroke(keyCode, InputEvent.SHIFT_DOWN_MASK));
     }
 
     @Override
@@ -1291,11 +1105,11 @@ public class JCodeEditor extends JCodeViewer {
                 g.drawLine(from.x, from.y + from.height - 2, to.x, from.y + from.height - 2);
             }
         }
-        if (caretOn) {
-            Rectangle caret = getOffsetBounds(getCaretPosition());
-            g.setColor(getTheme().foreground());
-            g.fillRect(caret.x, caret.y, caretWidth(), caret.height);
-        }
+    }
+
+    @Override
+    protected boolean isCaretVisible() {
+        return caretOn;
     }
 
     // ---- Input methods ----
@@ -1473,13 +1287,4 @@ public class JCodeEditor extends JCodeViewer {
         }
     }
 
-    /** The width the look and feel gives the caret of a text field, which is one pixel where it names none. */
-    private static int caretWidth() {
-        return UIManager.get("Caret.width") instanceof Integer width ? width : 1;
-    }
-
-    private void repaintCaret() {
-        Rectangle caret = getOffsetBounds(getCaretPosition());
-        repaint(caret.x - 1, caret.y, caretWidth() + 2, caret.height);
-    }
 }

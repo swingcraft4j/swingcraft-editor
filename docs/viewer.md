@@ -126,6 +126,9 @@ int caret = viewer.getCaretPosition();
 viewer.addSelectionListener(e -> update());
 ```
 
+While the viewer has the focus it shows a caret where the selection ends. It does not blink, as nothing can
+be typed.
+
 `selectAll()` and `copy()` do what the keys and the popup menu do. `getOffsetBounds(offset)` gives the place
 of an offset in the component, and `offsetAt(x, y)` the offset nearest to a point.
 
@@ -202,16 +205,25 @@ viewer.expandAllFolds();
 
 Ctrl is Command on macOS.
 
-| Key                  | What it does             | Action                                     |
-|----------------------|--------------------------|--------------------------------------------|
-| Ctrl+C               | Copy                     | `ACTION_COPY`                              |
-| Ctrl+A               | Select all               | `ACTION_SELECT_ALL`                        |
-| Ctrl+F               | Open the find bar        | `ACTION_FIND`                              |
-| F3, Shift+F3         | Find next, find previous | `ACTION_FIND_NEXT`, `ACTION_FIND_PREVIOUS` |
-| Ctrl+G               | Go to a line             | `ACTION_GO_TO_LINE`                        |
-| Ctrl+Minus           | Collapse the fold        | `ACTION_COLLAPSE_FOLD`                     |
-| Ctrl+Equals          | Expand the fold          | `ACTION_EXPAND_FOLD`                       |
-| Ctrl+Shift+Equals    | Expand all the folds     | `ACTION_EXPAND_ALL_FOLDS`                  |
+| Key                   | What it does                            | Action                                           |
+|-----------------------|-----------------------------------------|--------------------------------------------------|
+| Ctrl+C                | Copy                                    | `ACTION_COPY`                                    |
+| Ctrl+A                | Select all                              | `ACTION_SELECT_ALL`                              |
+| Ctrl+F                | Open the find bar                       | `ACTION_FIND`                                    |
+| F3, Shift+F3          | Find next, find previous                | `ACTION_FIND_NEXT`, `ACTION_FIND_PREVIOUS`       |
+| Ctrl+G                | Go to a line                            | `ACTION_GO_TO_LINE`                              |
+| Ctrl+Minus            | Collapse the fold                       | `ACTION_COLLAPSE_FOLD`                           |
+| Ctrl+Equals           | Expand the fold                         | `ACTION_EXPAND_FOLD`                             |
+| Ctrl+Shift+Equals     | Expand all the folds                    | `ACTION_EXPAND_ALL_FOLDS`                        |
+| Left, Right           | Move the caret by a char                | `"caret-left"`, `"caret-right"`                  |
+| Ctrl+Left, Ctrl+Right | Move it by a word; with Alt on macOS    | `"caret-previous-word"`, `"caret-next-word"`     |
+| Up, Down              | Move it by a row                        | `"caret-up"`, `"caret-down"`                     |
+| Page Up, Page Down    | Move it by a page                       | `"caret-page-up"`, `"caret-page-down"`           |
+| Home, End             | Move it to the start or end of the line | `"caret-line-start"`, `"caret-line-end"`         |
+| Ctrl+Home, Ctrl+End   | Move it to the start or end of the text | `"caret-document-start"`, `"caret-document-end"` |
+
+With Shift, the keys that move the caret extend the selection; the name of that action starts with
+`select-`, as in `"select-caret-left"`. The view scrolls to keep the caret in sight.
 
 The viewer has a popup menu with the main commands. Going to a line is not among them; it has its key, Ctrl+G.
 

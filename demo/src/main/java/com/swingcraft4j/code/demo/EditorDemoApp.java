@@ -101,6 +101,9 @@ public final class EditorDemoApp {
         }
         JCheckBox readOnly = new JCheckBox("Read only");
         readOnly.addActionListener(e -> editor.setEditable(!readOnly.isSelected()));
+        for (JCheckBox box : new JCheckBox[]{wrap, words, rounded, readOnly}) {
+            box.setFocusable(false); // keep the caret in the editor
+        }
 
         for (Language language : Languages.installed()) {
             languages.addItem(language.displayName());

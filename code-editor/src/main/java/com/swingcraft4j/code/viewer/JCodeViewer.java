@@ -57,6 +57,8 @@ import java.awt.RenderingHints;
 import java.awt.Toolkit;
 import java.awt.datatransfer.StringSelection;
 import java.awt.event.ActionEvent;
+import java.awt.event.FocusEvent;
+import java.awt.event.FocusListener;
 import java.awt.event.InputEvent;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseAdapter;
@@ -75,6 +77,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.TreeMap;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.function.IntSupplier;
 
 /**
  * Read-only source code viewer with syntax highlighting, optional line wrapping and line
@@ -87,6 +90,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
  */
 public class JCodeViewer extends JComponent implements Scrollable {
 
+    protected static final boolean MAC = System.getProperty("os.name", "").toLowerCase().contains("mac");
     private static final int MIN_WRAP_CELLS = 8;
     private static final char[] BLANK = {' '};
     /** What stands for the hidden lines of a collapsed fold, and the space at each side of it. */
@@ -152,6 +156,9 @@ public class JCodeViewer extends JComponent implements Scrollable {
 
     private int selectionAnchor;
     private int selectionCaret;
+    /** Set while the caret moves up or down, which keeps the column it is aiming for. */
+    private boolean keepColumn;
+    private int desiredX = -1;
     private TextSearch search;
 
     /** The markers on show, ordered by where they start. */
@@ -215,6 +222,17 @@ public class JCodeViewer extends JComponent implements Scrollable {
         installActions();
         installPopupMenu();
         markerTimer.setRepeats(false);
+        addFocusListener(new FocusListener() {
+            @Override
+            public void focusGained(FocusEvent e) {
+                repaintCaret();
+            }
+
+            @Override
+            public void focusLost(FocusEvent e) {
+                repaintCaret();
+            }
+        });
         // a move to a screen with another scale changes how wide the hinted glyphs are
         addPropertyChangeListener("graphicsConfiguration", event -> {
             if (screenScale() != metricsScale) {
@@ -596,7 +614,7 @@ public class JCodeViewer extends JComponent implements Scrollable {
         return selectionAnchor;
     }
 
-    /** The end of the selection that moves while it is extended; an editor shows its caret here. */
+    /** The end of the selection that moves while it is extended; the caret is shown here. */
     public int getCaretPosition() {
         return selectionCaret;
     }
@@ -618,6 +636,9 @@ public class JCodeViewer extends JComponent implements Scrollable {
 
     /** Called after the selection or the caret position changed; notifies the listeners. */
     protected void selectionChanged() {
+        if (!keepColumn) {
+            desiredX = -1;
+        }
         ChangeEvent event = new ChangeEvent(this);
         for (ChangeListener listener : selectionListeners) {
             listener.stateChanged(event);
@@ -642,6 +663,149 @@ public class JCodeViewer extends JComponent implements Scrollable {
             StringSelection contents = new StringSelection(getSelectedText());
             Toolkit.getDefaultToolkit().getSystemClipboard().setContents(contents, contents);
         }
+    }
+
+    // ---- Caret ----
+
+    /** Moves the caret, or with {@code extend} the end of the selection, and scrolls to where it is then. */
+    protected final void moveCaret(int target, boolean extend) {
+        select(extend ? selectionAnchor : target, target);
+        scrollCaretIntoView();
+    }
+
+    private void moveVertically(int rows, boolean extend) {
+        Rectangle caret = getOffsetBounds(selectionCaret);
+        if (desiredX < 0) {
+            desiredX = caret.x;
+        }
+        int y = caret.y + rows * lineHeight;
+        int target;
+        // above the first row or below the last one, not counting the padding around the text
+        if (y < getOffsetBounds(0).y) {
+            target = 0;
+        } else if (y > getOffsetBounds(model.length()).y) {
+            target = model.length();
+        } else {
+            target = offsetAt(desiredX, y);
+        }
+        keepColumn = true;
+        try {
+            moveCaret(target, extend);
+        } finally {
+            keepColumn = false;
+        }
+    }
+
+    private int visibleRows() {
+        return Math.max(1, getVisibleRect().height / lineHeight - 1);
+    }
+
+    protected final void scrollCaretIntoView() {
+        Rectangle caret = getOffsetBounds(selectionCaret);
+        int margin = caret.width * 4;
+        int left = Math.max(0, caret.x - margin);
+        scrollRectToVisible(new Rectangle(left, caret.y, caret.x + margin - left, caret.height));
+    }
+
+    private int previousOffset(int offset) {
+        if (offset == 0) {
+            return 0;
+        }
+        int previous = offset - 1;
+        if (model.charAt(previous) == '\n' && previous > 0 && model.charAt(previous - 1) == '\r') {
+            return previous - 1;
+        }
+        // step over a whole cluster: marks, joined letters, the halves of a surrogate pair
+        while (previous > 0 && Cells.isClusterContinuation(model.charAt(previous - 1), model.charAt(previous))) {
+            previous--;
+        }
+        return previous;
+    }
+
+    private int nextOffset(int offset) {
+        int length = model.length();
+        if (offset >= length) {
+            return length;
+        }
+        int next = offset + 1;
+        if (model.charAt(offset) == '\r' && next < length && model.charAt(next) == '\n') {
+            return next + 1;
+        }
+        while (next < length && Cells.isClusterContinuation(model.charAt(next - 1), model.charAt(next))) {
+            next++;
+        }
+        return next;
+    }
+
+    /** 0 for blanks, 1 for word chars, 2 for other chars, 3 for line terminators. */
+    private static int charClass(char c) {
+        if (c == '\n' || c == '\r') {
+            return 3;
+        }
+        if (isBlank(c)) {
+            return 0;
+        }
+        return Character.isLetterOrDigit(c) || c == '_' ? 1 : 2;
+    }
+
+    protected static boolean isBlank(char c) {
+        return c == ' ' || c == '\t';
+    }
+
+    /** The start of the next word: past the run of chars at the offset and the blanks after it. */
+    protected final int nextWord(int offset) {
+        int length = model.length();
+        if (offset >= length) {
+            return length;
+        }
+        int kind = charClass(model.charAt(offset));
+        if (kind == 3) {
+            return nextOffset(offset);
+        }
+        int next = offset;
+        while (next < length && charClass(model.charAt(next)) == kind) {
+            next++;
+        }
+        while (next < length && charClass(model.charAt(next)) == 0) {
+            next++;
+        }
+        return next;
+    }
+
+    /** The start of the word before the offset. */
+    protected final int previousWord(int offset) {
+        if (offset == 0) {
+            return 0;
+        }
+        if (charClass(model.charAt(offset - 1)) == 3) {
+            return previousOffset(offset);
+        }
+        int previous = offset;
+        while (previous > 0 && charClass(model.charAt(previous - 1)) == 0) {
+            previous--;
+        }
+        if (previous > 0) {
+            int kind = charClass(model.charAt(previous - 1));
+            while (kind != 3 && previous > 0 && charClass(model.charAt(previous - 1)) == kind) {
+                previous--;
+            }
+        }
+        return previous;
+    }
+
+    /** The first non-blank char of the caret's line, or the start of the line if the caret is already there. */
+    private int smartHome() {
+        int line = model.lineOfOffset(selectionCaret);
+        int start = model.lineStart(line);
+        int text = start;
+        while (text < model.lineEnd(line) && isBlank(model.charAt(text))) {
+            text++;
+        }
+        return selectionCaret == text ? start : text;
+    }
+
+    private int lineEnd() {
+        return model.lineEnd(model.lineOfOffset(selectionCaret));
     }
 
     // ---- Search and navigation ----
@@ -1594,9 +1758,32 @@ public class JCodeViewer extends JComponent implements Scrollable {
                     paintFoldMarker(g, line);
                 }
             }
+            if (isCaretVisible()) {
+                Rectangle caret = getOffsetBounds(selectionCaret);
+                g.setColor(theme.foreground());
+                g.fillRect(caret.x, caret.y, caretWidth(), caret.height);
+            }
         } finally {
             g.dispose();
         }
+    }
+
+    /**
+     * Whether the caret is painted now. Here it is while the viewer has the focus, and it does
+     * not blink, as nothing can be typed; an editor blinks it.
+     */
+    protected boolean isCaretVisible() {
+        return isFocusOwner();
+    }
+
+    /** The width the look and feel gives the caret of a text field, which is one pixel where it names none. */
+    private static int caretWidth() {
+        return UIManager.get("Caret.width") instanceof Integer width ? width : 1;
+    }
+
+    protected final void repaintCaret() {
+        Rectangle caret = getOffsetBounds(selectionCaret);
+        repaint(caret.x - 1, caret.y, caretWidth() + 2, caret.height);
     }
 
     /**
@@ -2150,6 +2337,26 @@ public class JCodeViewer extends JComponent implements Scrollable {
         select(model.lineStart(line), end);
     }
 
+    /**
+     * Binds a caret movement and, with Shift, the same movement extending the selection.
+     *
+     * @param collapse where the caret goes instead when a selection is dropped, or null to move as usual
+     */
+    private void bindMove(String name, int keyCode, int modifiers, IntSupplier target, IntSupplier collapse) {
+        bindAction(name, () -> {
+            boolean selection = getSelectionStart() != getSelectionEnd();
+            moveCaret(selection && collapse != null ? collapse.getAsInt() : target.getAsInt(), false);
+        }, KeyStroke.getKeyStroke(keyCode, modifiers));
+        bindAction("select-" + name, () -> moveCaret(target.getAsInt(), true),
+                KeyStroke.getKeyStroke(keyCode, modifiers | InputEvent.SHIFT_DOWN_MASK));
+    }
+
+    private void bindVertical(String name, int keyCode, IntSupplier rows) {
+        bindAction(name, () -> moveVertically(rows.getAsInt(), false), KeyStroke.getKeyStroke(keyCode, 0));
+        bindAction("select-" + name, () -> moveVertically(rows.getAsInt(), true),
+                KeyStroke.getKeyStroke(keyCode, InputEvent.SHIFT_DOWN_MASK));
+    }
+
     private void installActions() {
         int menuKey = GraphicsEnvironment.isHeadless()
                 ? InputEvent.CTRL_DOWN_MASK
@@ -2166,6 +2373,20 @@ public class JCodeViewer extends JComponent implements Scrollable {
                 KeyStroke.getKeyStroke(KeyEvent.VK_EQUALS, menuKey | InputEvent.SHIFT_DOWN_MASK));
         bindAction(ACTION_FIND_NEXT, this::findNext, KeyStroke.getKeyStroke(KeyEvent.VK_F3, 0));
         bindAction(ACTION_FIND_PREVIOUS, this::findPrevious, KeyStroke.getKeyStroke(KeyEvent.VK_F3, InputEvent.SHIFT_DOWN_MASK));
+
+        int word =MAC ? InputEvent.ALT_DOWN_MASK : InputEvent.CTRL_DOWN_MASK;
+        bindMove("caret-left", KeyEvent.VK_LEFT, 0, () -> previousOffset(getCaretPosition()), this::getSelectionStart);
+        bindMove("caret-right", KeyEvent.VK_RIGHT, 0, () -> nextOffset(getCaretPosition()), this::getSelectionEnd);
+        bindMove("caret-previous-word", KeyEvent.VK_LEFT, word, () -> previousWord(getCaretPosition()), null);
+        bindMove("caret-next-word", KeyEvent.VK_RIGHT, word, () -> nextWord(getCaretPosition()), null);
+        bindMove("caret-line-start", KeyEvent.VK_HOME, 0, this::smartHome, null);
+        bindMove("caret-line-end", KeyEvent.VK_END, 0, this::lineEnd, null);
+        bindMove("caret-document-start", KeyEvent.VK_HOME, menuKey, () -> 0, null);
+        bindMove("caret-document-end", KeyEvent.VK_END, menuKey, () -> model.length(), null);
+        bindVertical("caret-up", KeyEvent.VK_UP, () -> -1);
+        bindVertical("caret-down", KeyEvent.VK_DOWN, () -> 1);
+        bindVertical("caret-page-up", KeyEvent.VK_PAGE_UP, () -> -visibleRows());
+        bindVertical("caret-page-down", KeyEvent.VK_PAGE_DOWN, this::visibleRows);
     }
 
     /** Registers an action under a name and binds it to the keys while the viewer has focus. */

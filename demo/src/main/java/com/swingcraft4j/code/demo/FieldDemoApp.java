@@ -107,6 +107,9 @@ public final class FieldDemoApp {
         enabled.addActionListener(e -> fields.forEach(field -> field.setEnabled(enabled.isSelected())));
         JCheckBox dark = new JCheckBox("Dark");
         dark.addActionListener(e -> useTheme(dark.isSelected() ? CodeTheme.dark() : CodeTheme.light()));
+        for (JCheckBox box : new JCheckBox[]{editable, enabled, dark}) {
+            box.setFocusable(false); // keep the caret in the field
+        }
         JPanel options = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 0));
         options.add(editable);
         options.add(enabled);
