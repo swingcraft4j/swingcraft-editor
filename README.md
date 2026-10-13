@@ -101,13 +101,14 @@ pane. All the methods must be called on the event dispatch thread.
 
 ## Demo
 
-The `demo` module has five demos. It is not published, and it is the only module that uses
+The `demo` module has six demos. It is not published, and it is the only module that uses
 [FlatLaf](https://github.com/JFormDesigner/FlatLaf).
 
 | Class              | What it shows                                                        |
 |--------------------|----------------------------------------------------------------------|
 | `DemoApp`          | The viewer, with the languages, the themes and a file of a million lines |
 | `EditorDemoApp`    | The editor, with code completion, parameter hints and markers        |
+| `CompletionDemoApp` | Code completion on a script of JavaScript: globals, members after a dot, snippets, parameter hints |
 | `VariablesDemoApp` | Syntax of your own laid over a language: `{{variables}}` in JSON, and in a field of one line |
 | `FieldDemoApp`     | Text fields for one line of code: a template with variables, a condition of SQL, JSON, a regular expression |
 | `MarkdownDemoApp`  | Markdown edited at the left and previewed at the right               |

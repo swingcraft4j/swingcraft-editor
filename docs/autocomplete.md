@@ -3,6 +3,8 @@
 `AutoCompletion` gives a [`JCodeEditor`](editor.md) a popup of suggestions that opens as a word is typed.
 `ParameterHints` shows the parameters of a call while its arguments are typed.
 
+`CompletionDemoApp` in the `demo` module shows this page on a script of JavaScript.
+
 - [Install](#install)
 - [Suggestions of your own](#suggestions-of-your-own)
 - [A suggestion](#a-suggestion)
