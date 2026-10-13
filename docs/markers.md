@@ -2,12 +2,16 @@
 
 A `Marker` is a note on a range of a document, such as an error found by a compiler. A viewer or an editor
 underlines the range with a wavy line, puts a dot after the number of its line in the gutter, and shows the
-message in a tooltip, over the text and over the gutter.
+message in a tooltip, over the text and over the gutter. A stripe at the right shows where the markers are
+in the whole text, and F2 goes from one to the next.
 
 - [Set markers](#set-markers)
 - [Find markers as the text changes](#find-markers-as-the-text-changes)
 - [A slow analysis](#a-slow-analysis)
-- [Without the dots](#without-the-dots)
+- [The dots of the gutter](#the-dots-of-the-gutter)
+- [The stripe at the right](#the-stripe-at-the-right)
+- [Go to a marker](#go-to-a-marker)
+- [Listen to the markers](#listen-to-the-markers)
 - [Colours](#colours)
 
 ## Set markers
@@ -71,13 +75,61 @@ editor.addEditListener(e -> {
 });
 ```
 
-## Without the dots
+## The dots of the gutter
 
-The dot stands in the space after the line number, so the gutter is as wide with markers as without. To
-mark the text only, with the wavy lines and their tooltips, turn the dots off:
+A line with a marker has a dot after its number, in the colour of the most serious marker on the line. The
+dot stands in space that is there already, so the gutter is as wide with markers as without. A click on it
+goes to the marker, and the gutter gives the messages of the line as a tooltip.
 
 ```java
-editor.setMarkerDots(false);
+editor.setMarkerDots(false);   // no dots
+```
+
+## The stripe at the right
+
+The stripe lies between the text and the vertical scroll bar. It has a mark for each marker, as far down
+as the marker is in the document, and as long as the lines of its range. So it shows where the markers are
+in the whole text, also those that are not in view; where several fall on one place, the most serious one
+shows. While the whole text is in view, each mark is beside its line.
+
+- A mark gives the messages of its markers as a tooltip, and a click on it goes to the marker.
+- A square at the top has the colour of the most serious marker of the text, and is green when there are
+  none. Its tooltip counts them, as `2 errors, 1 warning`, and a click on it goes to the next marker. The
+  square is there once the viewer has had markers or a marker provider.
+
+The stripe is there with markers or without, and whether or not there is a scroll bar, so the text does not
+move when the first marker comes. It takes 10 pixels at the right, or as many as you set.
+
+```java
+editor.setMarkerStripeWidth(14);
+editor.setMarkerStripe(false);   // no stripe
+```
+
+The dots and the stripe are set apart from each other: both, which is the default, either one, or neither,
+which leaves the wavy lines and their tooltips.
+
+## Go to a marker
+
+F2 moves the caret to the next marker after it, and Shift+F2 to the one before; after the last comes the
+first again. The view scrolls to the marker, and a fold that hides it opens.
+
+```java
+editor.goToNextMarker();
+editor.goToPreviousMarker();
+editor.goToMarker(marker);
+```
+
+The actions are `ACTION_NEXT_MARKER` and `ACTION_PREVIOUS_MARKER`; to give them other keys, see
+[Change the keys](viewer.md#change-the-keys).
+
+## Listen to the markers
+
+A marker listener is told when there are other markers than there were: set by the application, found by
+the marker provider, or moved or removed by an edit. It keeps a list of problems or a count in a status bar
+in step.
+
+```java
+editor.addMarkerListener(e -> problems.setText(editor.getMarkers().size() + " problems"));
 ```
 
 ## Colours

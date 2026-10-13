@@ -69,6 +69,8 @@ An edit in an editor is not another model; for edits, see [Listen to edits](edit
 | `setFoldingEnabled(boolean)`     | `true`  | Shows the fold arrows in the gutter                                |
 | `setBracketMatching(boolean)`    | `true`  | Highlights the bracket at the caret and its partner                |
 | `setMarkerDots(boolean)`         | `true`  | Puts a dot in the gutter on a line with a [marker](markers.md)     |
+| `setMarkerStripe(boolean)`       | `true`  | Shows a stripe at the right with a mark where each [marker](markers.md) is |
+| `setMarkerStripeWidth(int)`      | `10`    | The width of that stripe, in pixels                                |
 | `setIndentGuides(boolean)`       | `true`  | Draws a faint line from a line down to where the lines indented under it end |
 | `setRoundedSelection(boolean)`   | `true`  | Draws the selection with rounded corners                           |
 | `setTabSize(int)`                | `4`     | The width of a tab, in chars                                       |
@@ -207,22 +209,23 @@ viewer.expandAllFolds();
 
 Ctrl is Command on macOS.
 
-| Key                   | What it does                            | Action                                           |
-|-----------------------|-----------------------------------------|--------------------------------------------------|
-| Ctrl+C                | Copy                                    | `ACTION_COPY`                                    |
-| Ctrl+A                | Select all                              | `ACTION_SELECT_ALL`                              |
-| Ctrl+F                | Open the find bar                       | `ACTION_FIND`                                    |
-| F3, Shift+F3          | Find next, find previous                | `ACTION_FIND_NEXT`, `ACTION_FIND_PREVIOUS`       |
-| Ctrl+G                | Go to a line                            | `ACTION_GO_TO_LINE`                              |
-| Ctrl+Minus            | Collapse the fold                       | `ACTION_COLLAPSE_FOLD`                           |
-| Ctrl+Equals           | Expand the fold                         | `ACTION_EXPAND_FOLD`                             |
-| Ctrl+Shift+Equals     | Expand all the folds                    | `ACTION_EXPAND_ALL_FOLDS`                        |
-| Left, Right           | Move the caret by a char                | `"caret-left"`, `"caret-right"`                  |
-| Ctrl+Left, Ctrl+Right | Move it by a word; with Alt on macOS    | `"caret-previous-word"`, `"caret-next-word"`     |
-| Up, Down              | Move it by a row                        | `"caret-up"`, `"caret-down"`                     |
-| Page Up, Page Down    | Move it by a page                       | `"caret-page-up"`, `"caret-page-down"`           |
-| Home, End             | Move it to the start or end of the line | `"caret-line-start"`, `"caret-line-end"`         |
-| Ctrl+Home, Ctrl+End   | Move it to the start or end of the text | `"caret-document-start"`, `"caret-document-end"` |
+| Key                   | What it does                                                   | Action                                           |
+|-----------------------|----------------------------------------------------------------|--------------------------------------------------|
+| Ctrl+C                | Copy                                                           | `ACTION_COPY`                                    |
+| Ctrl+A                | Select all                                                     | `ACTION_SELECT_ALL`                              |
+| Ctrl+F                | Open the find bar                                              | `ACTION_FIND`                                    |
+| F3, Shift+F3          | Find next, find previous                                       | `ACTION_FIND_NEXT`, `ACTION_FIND_PREVIOUS`       |
+| Ctrl+G                | Go to a line                                                   | `ACTION_GO_TO_LINE`                              |
+| F2, Shift+F2          | Go to the next or previous [marker](markers.md#go-to-a-marker) | `ACTION_NEXT_MARKER`, `ACTION_PREVIOUS_MARKER`   |
+| Ctrl+Minus            | Collapse the fold                                              | `ACTION_COLLAPSE_FOLD`                           |
+| Ctrl+Equals           | Expand the fold                                                | `ACTION_EXPAND_FOLD`                             |
+| Ctrl+Shift+Equals     | Expand all the folds                                           | `ACTION_EXPAND_ALL_FOLDS`                        |
+| Left, Right           | Move the caret by a char                                       | `"caret-left"`, `"caret-right"`                  |
+| Ctrl+Left, Ctrl+Right | Move it by a word; with Alt on macOS                           | `"caret-previous-word"`, `"caret-next-word"`     |
+| Up, Down              | Move it by a row                                               | `"caret-up"`, `"caret-down"`                     |
+| Page Up, Page Down    | Move it by a page                                              | `"caret-page-up"`, `"caret-page-down"`           |
+| Home, End             | Move it to the start or end of the line                        | `"caret-line-start"`, `"caret-line-end"`         |
+| Ctrl+Home, Ctrl+End   | Move it to the start or end of the text                        | `"caret-document-start"`, `"caret-document-end"` |
 
 With Shift, the keys that move the caret extend the selection; the name of that action starts with
 `select-`, as in `"select-caret-left"`. The view scrolls to keep the caret in sight.

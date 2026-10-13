@@ -119,8 +119,11 @@ public class JCodeViewer extends JComponent implements Scrollable {
     public static final String ACTION_COLLAPSE_FOLD = "collapse-fold";
     public static final String ACTION_EXPAND_FOLD = "expand-fold";
     public static final String ACTION_EXPAND_ALL_FOLDS = "expand-all-folds";
+    public static final String ACTION_NEXT_MARKER = "next-marker";
+    public static final String ACTION_PREVIOUS_MARKER = "previous-marker";
 
     private final LineNumberGutter gutter = new LineNumberGutter(this);
+    private final MarkerStripe stripe = new MarkerStripe(this);
     private final TokenBuffer tokens = new TokenBuffer();
     private final Font[] fonts = new Font[4];
     /** Used for runs the main font has no glyphs for; logical fonts fall back across scripts. */
@@ -138,6 +141,7 @@ public class JCodeViewer extends JComponent implements Scrollable {
     private final Timer highlightTimer = new Timer(15, e -> continueHighlighting(HIGHLIGHT_SLICE_NANOS));
     private final TextListener modelListener = this::modelChanged;
     private final List<ChangeListener> selectionListeners = new CopyOnWriteArrayList<>();
+    private final List<ChangeListener> markerListeners = new CopyOnWriteArrayList<>();
     private CodeTheme theme = CodeTheme.forLookAndFeel();
     private int tabSize = 4;
     private boolean lineWrap;
@@ -164,6 +168,9 @@ public class JCodeViewer extends JComponent implements Scrollable {
     /** The markers on show, ordered by where they start. */
     private Marker[] markers = new Marker[0];
     private boolean markerDots = true;
+    private boolean markerStripe = true;
+    /** Whether there have been markers, or something to find them: only then is having none worth saying. */
+    private boolean markersUsed;
     private int[] markerReach = new int[0];
     private MarkerProvider markerProvider;
     /** Asks the marker provider again once editing has paused. */
@@ -431,6 +438,7 @@ public class JCodeViewer extends JComponent implements Scrollable {
         this.theme = Objects.requireNonNull(theme);
         repaint();
         gutter.repaint();
+        stripe.repaint();
         firePropertyChange("theme", old, theme);
     }
 
@@ -1000,7 +1008,8 @@ public class JCodeViewer extends JComponent implements Scrollable {
     /**
      * Shows markers in the text: each is underlined with a wavy line in the colour of its
      * severity, marks its line in the gutter with a dot, and gives its message as a tooltip. They follow
-     * the text when it is edited. An empty collection removes them all.
+     * the text when it is edited. An empty collection removes them all. Other markers than
+     * there were are reported to the {@link #addMarkerListener marker listeners}.
      */
     public void setMarkers(Collection<Marker> newMarkers) {
         int length = model.length();
@@ -1013,7 +1022,9 @@ public class JCodeViewer extends JComponent implements Scrollable {
         }
         kept.sort(Comparator.comparingInt(Marker::start));
         boolean had = markers.length > 0;
+        Marker[] old = markers;
         markers = kept.toArray(new Marker[0]);
+        markersUsed |= markers.length > 0;
         // the furthest any marker up to each one reaches, to find those touching a line quickly
         markerReach = new int[markers.length];
         int reach = 0;
@@ -1030,6 +1041,58 @@ public class JCodeViewer extends JComponent implements Scrollable {
         }
         repaint();
         gutter.repaint();
+        stripe.markersChanged();
+        if (!Arrays.equals(old, markers)) {
+            ChangeEvent event = new ChangeEvent(this);
+            for (ChangeListener listener : markerListeners) {
+                listener.stateChanged(event);
+            }
+        }
+    }
+
+    /**
+     * Adds a listener told when there are other markers than there were, whoever set them:
+     * the application, the marker provider, or an edit that moved or removed some. It keeps
+     * a list of problems or a count in a status bar in step with {@link #getMarkers()}.
+     */
+    public void addMarkerListener(ChangeListener listener) {
+        markerListeners.add(listener);
+    }
+
+    public void removeMarkerListener(ChangeListener listener) {
+        markerListeners.remove(listener);
+    }
+
+    /** Moves the caret to the start of a marker, and scrolls there. */
+    public void goToMarker(Marker marker) {
+        select(marker.start(), marker.start());
+        reveal(selectionCaret, Math.min(marker.end(), model.length()));
+    }
+
+    /** Goes to the first marker that starts after the caret, or to the first of all after the last one. */
+    public void goToNextMarker() {
+        for (Marker marker : markers) {
+            if (marker.start() > selectionCaret) {
+                goToMarker(marker);
+                return;
+            }
+        }
+        if (markers.length > 0) {
+            goToMarker(markers[0]);
+        }
+    }
+
+    /** Goes to the last marker that starts before the caret, or to the last of all before the first one. */
+    public void goToPreviousMarker() {
+        for (int i = markers.length - 1; i >= 0; i--) {
+            if (markers[i].start() < selectionCaret) {
+                goToMarker(markers[i]);
+                return;
+            }
+        }
+        if (markers.length > 0) {
+            goToMarker(markers[markers.length - 1]);
+        }
     }
 
     /** Whether a line with a marker has a dot in the gutter; on by default. */
@@ -1044,6 +1107,40 @@ public class JCodeViewer extends JComponent implements Scrollable {
         gutter.repaint();
     }
 
+    /** Whether there is a stripe at the right of the text with a mark for each marker; on by default. */
+    public boolean isMarkerStripe() {
+        return markerStripe;
+    }
+
+    /**
+     * The stripe lies between the text and the vertical scroll bar of the scroll pane, and is
+     * there with markers or without. Its marks show where the markers are in the whole document,
+     * also those that are not in view; a mark gives the messages as a tooltip, and a click on it
+     * goes to the marker. A square at its top has the colour of the most serious marker, and is
+     * green when there are none.
+     */
+    public void setMarkerStripe(boolean markerStripe) {
+        this.markerStripe = markerStripe;
+        configureEnclosingScrollPane();
+    }
+
+    /** How wide the marker stripe is, in pixels; 10 by default. */
+    public int getMarkerStripeWidth() {
+        return stripe.stripeWidth();
+    }
+
+    /**
+     * Sets how wide the marker stripe is, in pixels. Its marks have two pixels of space at each side.
+     *
+     * @throws IllegalArgumentException if the width is less than 6
+     */
+    public void setMarkerStripeWidth(int width) {
+        if (width < 6) {
+            throw new IllegalArgumentException("the marker stripe must be 6 pixels wide or more: " + width);
+        }
+        stripe.setStripeWidth(width);
+    }
+
     public MarkerProvider getMarkerProvider() {
         return markerProvider;
     }
@@ -1054,6 +1151,7 @@ public class JCodeViewer extends JComponent implements Scrollable {
      */
     public void setMarkerProvider(MarkerProvider provider) {
         markerProvider = provider;
+        markersUsed |= provider != null;
         markerTimer.stop();
         if (provider == null) {
             setMarkers(List.of());
@@ -1120,6 +1218,21 @@ public class JCodeViewer extends JComponent implements Scrollable {
         return markers.length > 0;
     }
 
+    boolean markersUsed() {
+        return markersUsed;
+    }
+
+    /** The most serious marker on a line, the first of them if there are several, or null. */
+    Marker lineMarker(int line) {
+        Marker worst = null;
+        for (Marker marker : markersOnLine(line)) {
+            if (worst == null || marker.severity().compareTo(worst.severity()) < 0) {
+                worst = marker;
+            }
+        }
+        return worst;
+    }
+
     /** The most serious severity among the markers on a line, or null if there are none. */
     Severity lineSeverity(int line) {
         Severity worst = null;
@@ -1136,7 +1249,7 @@ public class JCodeViewer extends JComponent implements Scrollable {
         return toolTipFor(markersOnLine(line));
     }
 
-    private static String toolTipFor(List<Marker> found) {
+    static String toolTipFor(List<Marker> found) {
         if (found.isEmpty()) {
             return null;
         }
@@ -1412,6 +1525,7 @@ public class JCodeViewer extends JComponent implements Scrollable {
         }
         repaint();
         gutter.repaint();
+        stripe.markersChanged();
     }
 
     private void applyFolds() {
@@ -1675,6 +1789,7 @@ public class JCodeViewer extends JComponent implements Scrollable {
         if (scrollPane != null && scrollPane.getRowHeader() != null && scrollPane.getRowHeader().getView() == gutter) {
             scrollPane.setRowHeaderView(null);
         }
+        stripe.install(null);
         super.removeNotify();
     }
 
@@ -1691,6 +1806,7 @@ public class JCodeViewer extends JComponent implements Scrollable {
         if (scrollPane == null) {
             return;
         }
+        stripe.install(markerStripe ? scrollPane : null);
         boolean installed = scrollPane.getRowHeader() != null && scrollPane.getRowHeader().getView() == gutter;
         if (lineNumbersVisible != installed) {
             scrollPane.setRowHeaderView(lineNumbersVisible ? gutter : null);
@@ -2385,6 +2501,8 @@ public class JCodeViewer extends JComponent implements Scrollable {
                 KeyStroke.getKeyStroke(KeyEvent.VK_EQUALS, menuKey | InputEvent.SHIFT_DOWN_MASK));
         bindAction(ACTION_FIND_NEXT, this::findNext, KeyStroke.getKeyStroke(KeyEvent.VK_F3, 0));
         bindAction(ACTION_FIND_PREVIOUS, this::findPrevious, KeyStroke.getKeyStroke(KeyEvent.VK_F3, InputEvent.SHIFT_DOWN_MASK));
+        bindAction(ACTION_NEXT_MARKER, this::goToNextMarker, KeyStroke.getKeyStroke(KeyEvent.VK_F2, 0));
+        bindAction(ACTION_PREVIOUS_MARKER, this::goToPreviousMarker, KeyStroke.getKeyStroke(KeyEvent.VK_F2, InputEvent.SHIFT_DOWN_MASK));
 
         int word =MAC ? InputEvent.ALT_DOWN_MASK : InputEvent.CTRL_DOWN_MASK;
         bindMove("caret-left", KeyEvent.VK_LEFT, 0, () -> previousOffset(getCaretPosition()), this::getSelectionStart);

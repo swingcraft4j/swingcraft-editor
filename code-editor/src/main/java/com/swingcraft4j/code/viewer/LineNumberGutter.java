@@ -3,6 +3,7 @@ package com.swingcraft4j.code.viewer;
 import com.swingcraft4j.code.layout.RowIndex;
 import com.swingcraft4j.code.theme.CodeTheme;
 
+import com.swingcraft4j.code.marker.Marker;
 import com.swingcraft4j.code.marker.Severity;
 
 import javax.swing.JComponent;
@@ -47,8 +48,12 @@ final class LineNumberGutter extends JComponent {
         MouseAdapter mouse = new MouseAdapter() {
             @Override
             public void mousePressed(MouseEvent e) {
+                Marker marker = dotMarkerAt(e);
                 int line = foldableLineAt(e);
-                if (line >= 0) {
+                if (marker != null) {
+                    viewer.goToMarker(marker);
+                    viewer.requestFocusInWindow();
+                } else if (line >= 0) {
                     viewer.toggleFold(line);
                 }
             }
@@ -65,7 +70,8 @@ final class LineNumberGutter extends JComponent {
 
             @Override
             public void mouseMoved(MouseEvent e) {
-                setCursor(foldableLineAt(e) >= 0 ? Cursor.getPredefinedCursor(Cursor.HAND_CURSOR) : null);
+                boolean clickable = dotMarkerAt(e) != null || foldableLineAt(e) >= 0;
+                setCursor(clickable ? Cursor.getPredefinedCursor(Cursor.HAND_CURSOR) : null);
             }
         };
         addMouseListener(mouse);
@@ -119,6 +125,26 @@ final class LineNumberGutter extends JComponent {
         return viewer.isMarkerDots() && !viewer.isFoldingEnabled() ? (int) Math.ceil(viewer.cellWidth() / 2) : 0;
     }
 
+    /** Where the centre of the fold arrows is; a whole number, which puts it on a pixel. */
+    private int arrowX() {
+        return getWidth() - 1 - FOLD_PAD_RIGHT - (foldColumnWidth() - FOLD_PAD_RIGHT) / 2;
+    }
+
+    /** Half the width of a fold arrow; a whole number of pixels, so that every arrow is like the others. */
+    private int arrowSize() {
+        return (int) Math.max(3, Math.round(viewer.lineHeight() / 5.0));
+    }
+
+    /** Where the line numbers end: a cell before what comes after them. The dots stand in between. */
+    private double numbersEnd() {
+        return getWidth() - 1 - foldColumnWidth() - dotColumnWidth() - viewer.cellWidth();
+    }
+
+    /** Where the room for the dots ends: at the fold arrows, or else at the edge of the gutter. */
+    private double dotsEnd() {
+        return foldColumnWidth() > 0 ? arrowX() - arrowSize() : getWidth() - 1;
+    }
+
     /** The foldable line whose arrow is under the mouse, or -1. */
     private int foldableLineAt(MouseEvent e) {
         RowIndex rows = viewer.rowIndex();
@@ -128,6 +154,18 @@ final class LineNumberGutter extends JComponent {
         }
         int line = rows.lineAtRow(row);
         return rows.firstRow(line) == row && viewer.isFoldable(line) ? line : -1;
+    }
+
+    /** The marker whose dot is under the mouse, or null. */
+    private Marker dotMarkerAt(MouseEvent e) {
+        RowIndex rows = viewer.rowIndex();
+        int row = viewer.rowAtY(e.getY());
+        if (!viewer.hasMarkers() || !viewer.isMarkerDots() || e.getX() < numbersEnd() || e.getX() >= dotsEnd()
+                || row < 0 || row >= rows.rowCount()) {
+            return null;
+        }
+        int line = rows.lineAtRow(row);
+        return rows.firstRow(line) == row ? viewer.lineMarker(line) : null;
     }
 
     @Override
@@ -161,13 +199,10 @@ final class LineNumberGutter extends JComponent {
             int lineHeight = viewer.lineHeight();
             double cellWidth = viewer.cellWidth();
             int foldWidth = foldColumnWidth();
-            // centred on a pixel and a whole number of pixels in size, so that the two halves
-            // of an arrow are the same and every arrow is like the others
-            int arrowX = width - 1 - FOLD_PAD_RIGHT - (foldWidth - FOLD_PAD_RIGHT) / 2;
-            int arrowSize = (int) Math.max(3, Math.round(lineHeight / 5.0));
-            // the numbers end a cell before what comes after them, and the dots stand in between
-            double numbersEnd = width - 1 - foldWidth - dotColumnWidth() - cellWidth;
-            double dotsEnd = foldWidth > 0 ? arrowX - arrowSize : width - 1;
+            int arrowX = arrowX();
+            int arrowSize = arrowSize();
+            double numbersEnd = numbersEnd();
+            double dotsEnd = dotsEnd();
             int firstRow = Math.max(0, viewer.rowAtY(clip.y));
             int lastRow = Math.min(rows.rowCount() - 1, viewer.rowAtY(clip.y + clip.height - 1));
             if (firstRow > lastRow) {
