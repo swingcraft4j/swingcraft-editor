@@ -129,6 +129,10 @@ The new language has the id and the name of the one it started from; `id(String)
 of the builder set others. The languages that come with the library are rule languages, all but Java, HTML,
 Markdown and XML.
 
+The new language is [formatted](format.md) as the one it started from. Its formatter reads the code as that
+language does, so the words you add are names like any other to it, and the code comes out as it would
+without them. `formatter(Formatter)` of the builder sets another formatter, and `formatter(null)` none.
+
 ## Syntax laid over a language
 
 `OverlayLanguage` adds syntax of your own to a language that exists. Wherever a pattern matches, its token

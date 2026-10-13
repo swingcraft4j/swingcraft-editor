@@ -38,6 +38,10 @@ screen. The text is indented as the editor indents it: `setTabSize` and `setTabs
 Python and YAML have no formatter, since their indentation is their meaning. Neither have Shell, Dockerfile,
 INI, Properties, TOML and Env. HTML, XML, SQL and PHP have none yet.
 
+A language started from another with [`toBuilder()`](languages.md#more-words-for-a-language) is formatted as
+the one it started from: the scripts of an application in JavaScript with the names of its API are formatted
+as JavaScript.
+
 ## Code with braces
 
 ```java
@@ -192,5 +196,17 @@ Two rules for a formatter:
 - It never loses text. Where it cannot make sense of the text, it returns the text unchanged.
 - It may be given some lines from the middle of a document, when the user formats a selection. They come
   without the indentation they share, which the editor puts back.
+
+A rule language takes its formatter from the builder instead:
+
+```java
+Language mine = RuleLanguage.builder("mine", "Mine")
+        .lineComment("#")
+        .formatter(new MyFormatter())
+        .build();
+```
+
+With `toBuilder()` this replaces the formatter of the language it started from, and `formatter(null)` leaves
+the new language without one.
 
 A formatter does not need an editor: `new JsonFormatter().format(text, new FormatOptions(2, false))`.

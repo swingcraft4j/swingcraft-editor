@@ -1,5 +1,7 @@
 package com.swingcraft4j.code.lexer;
 
+import com.swingcraft4j.code.format.Formatter;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
@@ -53,6 +55,7 @@ public class RuleLanguage implements Language {
     final boolean capitalizedTypes;
     private final String lineComment;
     private final String[] blockComment;
+    private final Formatter formatter;
 
     protected RuleLanguage(Builder builder) {
         id = builder.id;
@@ -72,6 +75,7 @@ public class RuleLanguage implements Language {
         capitalizedTypes = builder.capitalizedTypes;
         lineComment = builder.lineComment;
         blockComment = builder.blockComment;
+        formatter = builder.formatter;
     }
 
     public static Builder builder(String id, String displayName) {
@@ -88,6 +92,9 @@ public class RuleLanguage implements Language {
      *         .build();
      * }</pre>
      * The id and the name are those of this language until the builder is given others.
+     * The new language is formatted as this one is: its formatter reads the code as this language
+     * does, so the words added are names like any other to it. {@link Builder#formatter} sets
+     * another, or none.
      */
     public Builder toBuilder() {
         Builder builder = new Builder(id, displayName);
@@ -103,6 +110,7 @@ public class RuleLanguage implements Language {
         builder.capitalizedTypes = capitalizedTypes;
         builder.lineComment = lineComment;
         builder.blockComment = blockComment;
+        builder.formatter = formatter();
         return builder;
     }
 
@@ -138,6 +146,11 @@ public class RuleLanguage implements Language {
     }
 
     @Override
+    public Formatter formatter() {
+        return formatter;
+    }
+
+    @Override
     public Lexer createLexer() {
         return new RuleLexer(this);
     }
@@ -158,6 +171,7 @@ public class RuleLanguage implements Language {
         private boolean capitalizedTypes;
         private String lineComment;
         private String[] blockComment;
+        private Formatter formatter;
 
         private Builder(String id, String displayName) {
             this.id = id;
@@ -280,6 +294,16 @@ public class RuleLanguage implements Language {
         /** Shows a capitalised word as a type and an all-caps word as a constant. */
         public Builder capitalizedTypes() {
             capitalizedTypes = true;
+            return this;
+        }
+
+        /**
+         * What formats the text of the language, or null for nothing. A language started with
+         * {@link RuleLanguage#toBuilder()} has the formatter of the one it started from until
+         * this is called.
+         */
+        public Builder formatter(Formatter formatter) {
+            this.formatter = formatter;
             return this;
         }
 

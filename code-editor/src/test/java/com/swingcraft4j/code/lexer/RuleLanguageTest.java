@@ -1,11 +1,16 @@
 package com.swingcraft4j.code.lexer;
 
+import com.swingcraft4j.code.format.FormatOptions;
+import com.swingcraft4j.code.format.Formatter;
+import com.swingcraft4j.code.languages.javascript.JavaScriptLanguage;
 import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
 
 class RuleLanguageTest {
 
@@ -69,6 +74,24 @@ class RuleLanguageTest {
                 "FUNCTION:f", "PUNCTUATION:(", "PUNCTUATION:)", "COMMENT:# x"), tokens);
         assertEquals("toy", toy.id(), "the language it started from is as it was");
         assertEquals(1, toy.keywords().size());
+    }
+
+    @Test
+    void aLanguageWithMoreWordsIsFormattedAsTheOneItStartedFrom() {
+        RuleLanguage script = new JavaScriptLanguage().toBuilder().keywords("app").build();
+        FormatOptions options = new FormatOptions(4, false);
+        String formatted = "if (app.on) {\n    app.run(a + 1)\n}\n";
+        assertEquals(formatted, script.formatter().format("if(app.on){\napp.run(a+1)\n}\n", options));
+        assertEquals(formatted, script.toBuilder().types("Other").build().formatter().format("if(app.on){\napp.run(a+1)\n}\n", options),
+                "and so is a language started from that one");
+        assertNull(script.toBuilder().formatter(null).build().formatter(), "unless it is given none");
+    }
+
+    @Test
+    void hasTheFormatterItIsBuiltWith() {
+        Formatter own = (text, options) -> text.strip();
+        assertSame(own, RuleLanguage.builder("toy", "Toy").formatter(own).build().formatter());
+        assertNull(RuleLanguage.builder("toy", "Toy").build().formatter());
     }
 
     @Test
