@@ -83,6 +83,18 @@ public final class ParameterHints {
             update();
         }
     };
+    /** Keeps the hint at its call while the window of the editor is moved or resized. */
+    private final ComponentListener ownerListener = new ComponentAdapter() {
+        @Override
+        public void componentMoved(ComponentEvent e) {
+            update();
+        }
+
+        @Override
+        public void componentResized(ComponentEvent e) {
+            update();
+        }
+    };
 
     private ParameterHints(JCodeEditor editor, Provider provider) {
         this.editor = editor;
@@ -102,10 +114,7 @@ public final class ParameterHints {
         editor.removeSelectionListener(caretListener);
         editor.removeFocusListener(focusListener);
         editor.removeComponentListener(editorListener);
-        if (window != null) {
-            window.dispose();
-            window = null;
-        }
+        disposeWindow();
     }
 
     public boolean isShowing() {
@@ -195,10 +204,9 @@ public final class ParameterHints {
             return;
         }
         if (window == null || window.getOwner() != owner) {
-            if (window != null) {
-                window.dispose();
-            }
+            disposeWindow();
             window = new JWindow(owner);
+            owner.addComponentListener(ownerListener);
             window.setFocusableWindowState(false);
             window.setType(Window.Type.POPUP);
             window.add(label);
@@ -236,6 +244,14 @@ public final class ParameterHints {
     public void hide() {
         if (isShowing()) {
             window.setVisible(false);
+        }
+    }
+
+    private void disposeWindow() {
+        if (window != null) {
+            window.getOwner().removeComponentListener(ownerListener);
+            window.dispose();
+            window = null;
         }
     }
 }
