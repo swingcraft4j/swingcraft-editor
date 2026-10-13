@@ -95,17 +95,12 @@ final class LineNumberGutter extends JComponent {
         repaint(getWidth() - 1 - foldWidth, visible.y, foldWidth, visible.height);
     }
 
-    /** Width of the column holding the marks for lines with markers, at the left edge; none while there are no markers. */
-    private int markColumnWidth() {
-        return viewer.hasMarkers() ? viewer.lineHeight() * 2 / 3 : 0;
-    }
-
     /** The messages of the markers on the line under the mouse. */
     @Override
     public String getToolTipText(MouseEvent e) {
         RowIndex rows = viewer.rowIndex();
         int row = viewer.rowAtY(e.getY());
-        if (!viewer.hasMarkers() || row < 0 || row >= rows.rowCount()) {
+        if (!viewer.hasMarkers() || !viewer.isMarkerDots() || row < 0 || row >= rows.rowCount()) {
             return null;
         }
         return viewer.lineMarkerText(rows.lineAtRow(row));
@@ -114,6 +109,14 @@ final class LineNumberGutter extends JComponent {
     /** Width of the column holding the fold arrows, at the right edge of the gutter, with the space after them. */
     private int foldColumnWidth() {
         return viewer.isFoldingEnabled() ? (int) Math.ceil(viewer.cellWidth() * 2) + FOLD_PAD_RIGHT : 0;
+    }
+
+    /**
+     * Room for the dots of the markers where there is no column of fold arrows to share it with.
+     * It is there whether or not there are markers, so that the first one does not move the text.
+     */
+    private int dotColumnWidth() {
+        return viewer.isMarkerDots() && !viewer.isFoldingEnabled() ? (int) Math.ceil(viewer.cellWidth() / 2) : 0;
     }
 
     /** The foldable line whose arrow is under the mouse, or -1. */
@@ -130,7 +133,7 @@ final class LineNumberGutter extends JComponent {
     @Override
     public Dimension getPreferredSize() {
         int digits = Math.max(2, Integer.toString(viewer.getLineCount()).length());
-        int width = markColumnWidth() + (int) Math.ceil((digits + 2) * viewer.cellWidth()) + foldColumnWidth() + 1;
+        int width = (int) Math.ceil((digits + 2) * viewer.cellWidth()) + dotColumnWidth() + foldColumnWidth() + 1;
         return new Dimension(width, viewer.getPreferredSize().height);
     }
 
@@ -158,6 +161,13 @@ final class LineNumberGutter extends JComponent {
             int lineHeight = viewer.lineHeight();
             double cellWidth = viewer.cellWidth();
             int foldWidth = foldColumnWidth();
+            // centred on a pixel and a whole number of pixels in size, so that the two halves
+            // of an arrow are the same and every arrow is like the others
+            int arrowX = width - 1 - FOLD_PAD_RIGHT - (foldWidth - FOLD_PAD_RIGHT) / 2;
+            int arrowSize = (int) Math.max(3, Math.round(lineHeight / 5.0));
+            // the numbers end a cell before what comes after them, and the dots stand in between
+            double numbersEnd = width - 1 - foldWidth - dotColumnWidth() - cellWidth;
+            double dotsEnd = foldWidth > 0 ? arrowX - arrowSize : width - 1;
             int firstRow = Math.max(0, viewer.rowAtY(clip.y));
             int lastRow = Math.min(rows.rowCount() - 1, viewer.rowAtY(clip.y + clip.height - 1));
             if (firstRow > lastRow) {
@@ -177,27 +187,25 @@ final class LineNumberGutter extends JComponent {
                     continue;
                 }
                 String number = Integer.toString(line + 1);
-                float x = (float) (width - 1 - foldWidth - (number.length() + 1) * cellWidth);
+                float x = (float) (numbersEnd - number.length() * cellWidth);
                 g.drawString(number, x, viewer.rowY(row) + viewer.baseline());
-                Severity severity = viewer.hasMarkers() ? viewer.lineSeverity(line) : null;
+                Severity severity = viewer.hasMarkers() && viewer.isMarkerDots() ? viewer.lineSeverity(line) : null;
                 if (severity != null) {
                     // a dot in the colour of the most serious marker on the line
-                    int size = Math.max(6, lineHeight / 2 - 1);
+                    int size = Math.max(4, Math.min(lineHeight / 2 - 1, (int) cellWidth - 1));
+                    int left = (int) Math.round((numbersEnd + dotsEnd - size) / 2);
                     g.setColor(theme.markerColor(severity));
-                    g.fillOval(3, viewer.rowY(row) + (lineHeight - size) / 2, size, size);
+                    g.fillOval(left, viewer.rowY(row) + (lineHeight - size) / 2, size, size);
                     g.setColor(theme.gutterForeground());
                 }
                 boolean collapsed = viewer.isCollapsed(line);
                 if (foldWidth > 0 && viewer.isFoldable(line) && (collapsed || arrowAlpha > 0)) {
-                    // centred on a pixel and a whole number of pixels in size, so that the
-                    // two halves are the same and every arrow is like the others
-                    int centerX = width - 1 - FOLD_PAD_RIGHT - (foldWidth - FOLD_PAD_RIGHT) / 2;
                     int centerY = viewer.rowY(row) + lineHeight / 2;
                     Composite opaque = g.getComposite();
                     if (!collapsed) {
                         g.setComposite(AlphaComposite.SrcOver.derive(arrowAlpha));
                     }
-                    paintArrow(g, centerX + 0.5, centerY + 0.5, Math.max(3, Math.round(lineHeight / 5.0)), collapsed);
+                    paintArrow(g, arrowX + 0.5, centerY + 0.5, arrowSize, collapsed);
                     g.setComposite(opaque);
                 }
             }

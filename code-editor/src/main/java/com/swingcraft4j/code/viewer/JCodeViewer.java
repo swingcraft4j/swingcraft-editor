@@ -163,6 +163,7 @@ public class JCodeViewer extends JComponent implements Scrollable {
 
     /** The markers on show, ordered by where they start. */
     private Marker[] markers = new Marker[0];
+    private boolean markerDots = true;
     private int[] markerReach = new int[0];
     private MarkerProvider markerProvider;
     /** Asks the marker provider again once editing has paused. */
@@ -998,7 +999,7 @@ public class JCodeViewer extends JComponent implements Scrollable {
 
     /**
      * Shows markers in the text: each is underlined with a wavy line in the colour of its
-     * severity, marks its line in the gutter, and gives its message as a tooltip. They follow
+     * severity, marks its line in the gutter with a dot, and gives its message as a tooltip. They follow
      * the text when it is edited. An empty collection removes them all.
      */
     public void setMarkers(Collection<Marker> newMarkers) {
@@ -1026,9 +1027,20 @@ public class JCodeViewer extends JComponent implements Scrollable {
             } else {
                 ToolTipManager.sharedInstance().unregisterComponent(this);
             }
-            gutter.revalidate(); // the gutter makes room for its marks only while there are any
         }
         repaint();
+        gutter.repaint();
+    }
+
+    /** Whether a line with a marker has a dot in the gutter; on by default. */
+    public boolean isMarkerDots() {
+        return markerDots;
+    }
+
+    /** Without the dots, markers show in the text only: as the wavy lines and their tooltips. */
+    public void setMarkerDots(boolean markerDots) {
+        this.markerDots = markerDots;
+        gutter.revalidate();
         gutter.repaint();
     }
 

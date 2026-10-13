@@ -101,7 +101,10 @@ public final class EditorDemoApp {
         }
         JCheckBox readOnly = new JCheckBox("Read only");
         readOnly.addActionListener(e -> editor.setEditable(!readOnly.isSelected()));
-        for (JCheckBox box : new JCheckBox[]{wrap, words, rounded, readOnly}) {
+        JCheckBox markerDots = new JCheckBox("Marker dots", true);
+        markerDots.setToolTipText("Put a dot in the gutter on a line with a problem");
+        markerDots.addActionListener(e -> editor.setMarkerDots(markerDots.isSelected()));
+        for (JCheckBox box : new JCheckBox[]{wrap, words, rounded, readOnly, markerDots}) {
             box.setFocusable(false); // keep the caret in the editor
         }
 
@@ -129,6 +132,7 @@ public final class EditorDemoApp {
         toolBar.add(words);
         toolBar.add(rounded);
         toolBar.add(readOnly);
+        toolBar.add(markerDots);
         toolBar.addSeparator();
         toolBar.add(languages);
         toolBar.add(Box.createHorizontalStrut(DemoFonts.GAP));

@@ -1,12 +1,13 @@
 # Markers
 
 A `Marker` is a note on a range of a document, such as an error found by a compiler. A viewer or an editor
-underlines the range with a wavy line, puts a dot on its line in the gutter, and shows the message in a
-tooltip, over the text and over the dot.
+underlines the range with a wavy line, puts a dot after the number of its line in the gutter, and shows the
+message in a tooltip, over the text and over the gutter.
 
 - [Set markers](#set-markers)
 - [Find markers as the text changes](#find-markers-as-the-text-changes)
 - [A slow analysis](#a-slow-analysis)
+- [Without the dots](#without-the-dots)
 - [Colours](#colours)
 
 ## Set markers
@@ -68,6 +69,15 @@ editor.addEditListener(e -> {
         });
     });
 });
+```
+
+## Without the dots
+
+The dot stands in the space after the line number, so the gutter is as wide with markers as without. To
+mark the text only, with the wavy lines and their tooltips, turn the dots off:
+
+```java
+editor.setMarkerDots(false);
 ```
 
 ## Colours

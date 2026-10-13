@@ -68,6 +68,7 @@ An edit in an editor is not another model; for edits, see [Listen to edits](edit
 | `setLineNumbersVisible(boolean)` | `true`  | Shows the gutter with the line numbers                             |
 | `setFoldingEnabled(boolean)`     | `true`  | Shows the fold arrows in the gutter                                |
 | `setBracketMatching(boolean)`    | `true`  | Highlights the bracket at the caret and its partner                |
+| `setMarkerDots(boolean)`         | `true`  | Puts a dot in the gutter on a line with a [marker](markers.md)     |
 | `setIndentGuides(boolean)`       | `true`  | Draws a faint line from a line down to where the lines indented under it end |
 | `setRoundedSelection(boolean)`   | `true`  | Draws the selection with rounded corners                           |
 | `setTabSize(int)`                | `4`     | The width of a tab, in chars                                       |
