@@ -42,6 +42,22 @@ A language started from another with [`toBuilder()`](languages.md#more-words-for
 the one it started from: the scripts of an application in JavaScript with the names of its API are formatted
 as JavaScript.
 
+A language with [syntax laid over another](languages.md#syntax-laid-over-a-language) is formatted as the
+language under it, and what the syntax matches is kept whole. So JSON with placeholders is formatted as JSON:
+
+```json
+{"id":{{id}},"url":"{{baseUrl}}/users"}
+```
+
+becomes
+
+```json
+{
+    "id": {{id}},
+    "url": "{{baseUrl}}/users"
+}
+```
+
 ## Code with braces
 
 ```java

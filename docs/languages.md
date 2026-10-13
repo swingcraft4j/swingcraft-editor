@@ -152,6 +152,10 @@ editor.setLanguage(template);
 A match lies within one line. Where two matches overlap, the one that starts first is kept. The keywords and
 the comments are those of the base language.
 
+The text is [formatted](format.md) as that of the base language is, with every match kept whole: `{{name}}`
+in JSON is not taken for two objects. `formatter(Formatter)` of the builder sets another formatter, which
+keeps the matches whole too, and `formatter(null)` none.
+
 Where the text around your syntax is no language, lay it over `PlainTextLanguage`, in which nothing is
 highlighted. A URL or a message with placeholders is such a text; a `RuleLanguage` would mark the numbers in it.
 

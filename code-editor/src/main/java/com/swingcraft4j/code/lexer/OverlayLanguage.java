@@ -1,5 +1,7 @@
 package com.swingcraft4j.code.lexer;
 
+import com.swingcraft4j.code.format.Formatter;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -18,6 +20,8 @@ import java.util.regex.Pattern;
  * }</pre>
  * A match lies within one line. Where two matches overlap, the one starting first is kept,
  * and of two starting together the one whose pattern was added first.
+ * <p>
+ * The text is formatted as that of the base language is, with every match kept whole.
  */
 public final class OverlayLanguage implements Language {
 
@@ -29,6 +33,7 @@ public final class OverlayLanguage implements Language {
     private final String displayName;
     private final List<String> fileExtensions;
     private final List<Overlay> overlays;
+    private final Formatter formatter;
 
     private OverlayLanguage(Builder builder) {
         base = builder.base;
@@ -36,6 +41,8 @@ public final class OverlayLanguage implements Language {
         displayName = builder.displayName;
         fileExtensions = List.copyOf(builder.fileExtensions);
         overlays = List.copyOf(builder.overlays);
+        Formatter plain = builder.formatterSet ? builder.formatter : base.formatter();
+        formatter = plain == null ? null : new OverlayFormatter(plain, overlays);
     }
 
     /** Starts a language that is the base one plus the patterns added to the builder. */
@@ -73,6 +80,12 @@ public final class OverlayLanguage implements Language {
         return base.blockComment();
     }
 
+    /** The formatter of the base language, which is given the text without the matches and so keeps each of them whole. */
+    @Override
+    public Formatter formatter() {
+        return formatter;
+    }
+
     @Override
     public Lexer createLexer() {
         return new OverlayLexer(base.createLexer(), overlays);
@@ -85,6 +98,8 @@ public final class OverlayLanguage implements Language {
         private String displayName;
         private List<String> fileExtensions;
         private final List<Overlay> overlays = new ArrayList<>();
+        private Formatter formatter;
+        private boolean formatterSet;
 
         private Builder(Language base) {
             this.base = base;
@@ -114,6 +129,17 @@ public final class OverlayLanguage implements Language {
         /** Shows every match of a regular expression as a token of the given type. */
         public Builder pattern(TokenType type, String regex) {
             overlays.add(new Overlay(type, Pattern.compile(regex)));
+            return this;
+        }
+
+        /**
+         * Sets what formats the text in place of the formatter of the base language, or null
+         * for nothing. It is given the text with a word in place of each match, so it keeps
+         * the matches whole as the formatter of the base language does.
+         */
+        public Builder formatter(Formatter formatter) {
+            this.formatter = formatter;
+            formatterSet = true;
             return this;
         }
 
