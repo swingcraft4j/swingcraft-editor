@@ -4,6 +4,9 @@ package com.swingcraft4j.code.diff;
  * One place where two versions of a text differ: a run of lines of the original that the
  * revised version has replaced with a run of lines of its own. Either run may be empty, where
  * lines were only inserted or only deleted.
+ * <p>
+ * {@link InlineDiff} gives changes of the same form within one line, whose indexes are of
+ * chars instead of lines.
  *
  * @param originalStart the index of the first line of the run in the original, from 0; where
  *                      the run is empty, the index of the line it comes before

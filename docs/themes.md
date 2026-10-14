@@ -91,10 +91,16 @@ CodeTheme theme = CodeTheme.builder()
 | `activeIndentGuide(Color)`             | The indent guide of the block the caret is in           |
 | `style(TokenType, TokenStyle)`         | The tokens of one type                                  |
 | `markerColor(Severity, Color)`         | The [markers](markers.md) of one severity               |
+| `insertedLineBackground(Color)`        | A line a [diff](diff.md) put in                         |
+| `insertedTextBackground(Color)`        | The chars that changed in a line put in                 |
+| `deletedLineBackground(Color)`         | A line a diff took away                                 |
+| `deletedTextBackground(Color)`         | The chars that changed in a line taken away             |
 
 A theme that does not set the two colours of the fold mark gets them made from its background and its
 foreground, so the mark shows also where the gutter has the colour of the text background. The colours of the
-indent guides are made the same way where they are not set.
+indent guides are made the same way where they are not set. The four backgrounds of a diff that are not set
+are the colours of `TokenType.INSERTED` and `TokenType.DELETED` faded into the background: a little for a
+line, more for the chars that changed in it.
 
 ## Follow the look and feel
 

@@ -12,6 +12,7 @@ measured, tokenized and painted, so a file of a million lines opens and scrolls 
 - [Find](#find)
 - [Go to a line](#go-to-a-line)
 - [Folding](#folding)
+- [Highlights](#highlights)
 - [Keys](#keys)
 
 All the methods must be called on the event dispatch thread.
@@ -73,6 +74,8 @@ An edit in an editor is not another model; for edits, see [Listen to edits](edit
 | `setMarkerStripeWidth(int)`      | `10`    | The width of that stripe, in pixels                                |
 | `setIndentGuides(boolean)`       | `true`  | Draws a faint line from a line down to where the lines indented under it end |
 | `setRoundedSelection(boolean)`   | `true`  | Draws the selection with rounded corners                           |
+| `setRoundedHighlights(boolean)`  | `false` | Draws the [highlights](#highlights) of chars with rounded corners  |
+| `setHighlightRadius(int)`        | `4`     | The radius of those corners, in pixels                             |
 | `setTabSize(int)`                | `4`     | The width of a tab, in chars                                       |
 | `setTopPadding(int)`             | `0`     | Empty space above the first line, in pixels                        |
 | `setBottomPadding(int)`          | `0`     | Empty space below the last line, in pixels                         |
@@ -204,6 +207,44 @@ viewer.expandFold(line);
 viewer.toggleFold(line);
 viewer.expandAllFolds();
 ```
+
+## Highlights
+
+A highlight lays a background behind a part of the text: whole lines, from edge to edge of the view, or the
+chars of a range. They are what a [diff](diff.md#backgrounds) shows the lines and the words that changed
+with, and they serve anything else that marks text: the line a debugger stopped at, the lines of a search
+result, a span to review.
+
+```java
+TextModel model = viewer.getModel();
+viewer.setHighlights(List.of(
+        Highlight.line(model.lineStart(4), model.lineEnd(6), new Color(0xFFF4C2)),   // lines 4 to 6
+        Highlight.text(model.lineStart(5) + 8, model.lineStart(5) + 13, new Color(0xFFD866))));
+viewer.setHighlights(List.of()); // removes them
+```
+
+| Factory                               | What gets the background                                          |
+|---------------------------------------|-------------------------------------------------------------------|
+| `Highlight.line(start, end, color)`   | Every row of the lines from the one of `start` to the one of `end` |
+| `Highlight.text(start, end, color)`   | The chars `[start, end)`, as the selection covers them            |
+
+Highlights of lines are painted over the background of the line of the caret in an editor, so that the line
+keeps its colour while the caret is on it. They are painted under highlights of chars, and both under the
+matches of a search and the selection. Of two of a kind that overlap, the one that starts later is painted
+over the other, and of two that start together, the later one in the list.
+
+They follow the text when it is edited: a highlight of chars whose text is deleted goes with it, a highlight
+of lines stays on the line it is left on. Another document, as with `setText`, removes them.
+
+Highlights of chars can have rounded corners, as the selection has:
+
+```java
+viewer.setRoundedHighlights(true); // off by default
+viewer.setHighlightRadius(6);      // 4 by default; a large radius makes a pill of a short highlight
+```
+
+One that runs over several rows is drawn as one smooth shape. Highlights of lines run from edge to edge of
+the view and stay square.
 
 ## Keys
 

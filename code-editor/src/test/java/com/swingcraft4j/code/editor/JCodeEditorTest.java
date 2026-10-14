@@ -6,6 +6,7 @@ import com.swingcraft4j.code.lexer.Language;
 import com.swingcraft4j.code.lexer.RuleLanguage;
 import com.swingcraft4j.code.marker.Marker;
 import com.swingcraft4j.code.text.GapTextModel;
+import com.swingcraft4j.code.viewer.Highlight;
 import org.junit.jupiter.api.Test;
 
 import java.awt.Font;
@@ -15,6 +16,7 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class JCodeEditorTest {
@@ -594,6 +596,69 @@ class JCodeEditorTest {
         assertEquals(List.of("found"), editor.getMarkers().stream().map(Marker::message).toList());
         editor.setMarkerProvider(null);
         assertEquals(List.of(), editor.getMarkers());
+    }
+
+    @Test
+    void highlightsFollowTheTextAndAreGoneWithAnotherDocument() {
+        editor.setText("abc\ndef\nghi");
+        java.awt.Color green = java.awt.Color.GREEN;
+        editor.setHighlights(List.of(Highlight.text(5, 7, green), Highlight.line(4, 7, green), Highlight.text(9, 50, green)));
+        assertEquals(List.of(Highlight.line(4, 7, green), Highlight.text(5, 7, green), Highlight.text(9, 11, green)),
+                editor.getHighlights(), "in order, and cut at the end of the text");
+
+        editor.select(0, 0);
+        type("xx");
+        assertEquals(List.of(6, 7, 11), editor.getHighlights().stream().map(Highlight::start).toList(), "text typed before moves them");
+
+        editor.select(6, 9);
+        editor.replaceSelection("");
+        assertEquals(List.of(Highlight.line(6, 6, green), Highlight.text(8, 10, green)), editor.getHighlights(),
+                "one of chars goes with its text, one of lines stays on its line");
+
+        // painting with highlights in view and past it does not fail
+        editor.setSize(300, 200);
+        java.awt.image.BufferedImage image = new java.awt.image.BufferedImage(300, 200, java.awt.image.BufferedImage.TYPE_INT_RGB);
+        java.awt.Graphics2D g = image.createGraphics();
+        editor.paint(g);
+        g.dispose();
+        assertEquals(green.getRGB(), image.getRGB(299, editor.getOffsetBounds(6).y + 2), "a line is filled to the edge");
+
+        editor.setText("other");
+        assertEquals(List.of(), editor.getHighlights());
+    }
+
+    @Test
+    void roundsTheCornersOfHighlightsOfCharsWhenAsked() {
+        // blanks, so that no glyph lies on the points looked at
+        editor.setText("     world");
+        java.awt.Color green = java.awt.Color.GREEN;
+        editor.setHighlights(List.of(Highlight.text(0, 5, green)));
+        editor.setSize(300, 100);
+        Rectangle from = editor.getOffsetBounds(0);
+        Rectangle to = editor.getOffsetBounds(5);
+        int middleX = (from.x + to.x) / 2;
+        int middleY = from.y + from.height / 2;
+        assertFalse(editor.isRoundedHighlights(), "square by default");
+        assertEquals(green.getRGB(), paintedAt(from.x, from.y), "a square corner is filled");
+
+        editor.setRoundedHighlights(true);
+        assertTrue(green.getRGB() != paintedAt(from.x, from.y), "a rounded corner is not");
+        assertTrue(green.getRGB() != paintedAt(to.x - 1, from.y + from.height - 1), "nor the one across from it");
+        assertEquals(green.getRGB(), paintedAt(middleX, middleY), "the middle is");
+
+        editor.setHighlightRadius(0);
+        assertEquals(green.getRGB(), paintedAt(from.x, from.y), "a radius of 0 is square again");
+        assertThrows(IllegalArgumentException.class, () -> editor.setHighlightRadius(-1));
+    }
+
+    /** The colour the editor paints at a point. */
+    private int paintedAt(int x, int y) {
+        java.awt.image.BufferedImage image = new java.awt.image.BufferedImage(editor.getWidth(), editor.getHeight(),
+                java.awt.image.BufferedImage.TYPE_INT_RGB);
+        java.awt.Graphics2D g = image.createGraphics();
+        editor.paint(g);
+        g.dispose();
+        return image.getRGB(x, y);
     }
 
     @Test

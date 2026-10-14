@@ -176,6 +176,12 @@ public class JCodeViewer extends JComponent implements Scrollable {
     /** Asks the marker provider again once editing has paused. */
     private final Timer markerTimer = new Timer(MARKER_DELAY, e -> runMarkerProvider());
 
+    /** The highlights on show, ordered by where they start, and the furthest any up to each one reaches. */
+    private Highlight[] highlights = new Highlight[0];
+    private int[] highlightReach = new int[0];
+    private boolean roundedHighlights;
+    private int highlightRadius = SELECTION_RADIUS;
+
     private boolean bracketMatching = true;
     private final BracketMatcher bracketMatcher = new BracketMatcher();
     /** The bracket next to the caret and its partner, or -1 when there is no such pair. */
@@ -325,6 +331,7 @@ public class JCodeViewer extends JComponent implements Scrollable {
         markerTimer.stop();
         setMarkers(List.of());
         runMarkerProvider();
+        setHighlights(List.of());
         firePropertyChange("model", old, model);
     }
 
@@ -381,6 +388,9 @@ public class JCodeViewer extends JComponent implements Scrollable {
         int caret = shifted(selectionCaret, change);
         if (markers.length > 0) {
             moveMarkers(change);
+        }
+        if (highlights.length > 0) {
+            moveHighlights(change);
         }
         if (markerProvider != null) {
             markerTimer.restart();
@@ -1180,6 +1190,146 @@ public class JCodeViewer extends JComponent implements Scrollable {
         setMarkers(moved);
     }
 
+    // ---- Highlights ----
+
+    /** The highlights on show, in the order of where they start. */
+    public List<Highlight> getHighlights() {
+        return List.of(highlights);
+    }
+
+    /**
+     * Lays backgrounds behind parts of the text: whole lines, or the chars of a range. They are
+     * painted under the selection and the matches of a search, and a highlight of lines under one
+     * of chars; of two of a kind, the one that starts later is painted over the other, and of two
+     * that start together, the later one in the collection. They follow the text when
+     * it is edited, and another document removes them. An empty collection removes them all.
+     */
+    public void setHighlights(Collection<Highlight> newHighlights) {
+        int length = model.length();
+        List<Highlight> kept = new ArrayList<>();
+        for (Highlight highlight : newHighlights) {
+            if (highlight.start() <= length) {
+                kept.add(highlight.end() <= length ? highlight
+                        : new Highlight(highlight.start(), length, highlight.color(), highlight.kind()));
+            }
+        }
+        // stable, so that of two that start together the later one is painted over the earlier
+        kept.sort(Comparator.comparingInt(Highlight::start));
+        if (kept.isEmpty() && highlights.length == 0) {
+            return;
+        }
+        highlights = kept.toArray(new Highlight[0]);
+        highlightReach = new int[highlights.length];
+        int reach = 0;
+        for (int i = 0; i < highlights.length; i++) {
+            reach = Math.max(reach, highlights[i].end());
+            highlightReach[i] = reach;
+        }
+        repaint();
+    }
+
+    public boolean isRoundedHighlights() {
+        return roundedHighlights;
+    }
+
+    /**
+     * Whether highlights of chars are drawn with rounded corners, as the rounded selection is:
+     * one that runs over several rows is one smooth shape. Off by default, which draws them as
+     * plain rectangles. Highlights of lines run from edge to edge and stay square.
+     */
+    public void setRoundedHighlights(boolean roundedHighlights) {
+        this.roundedHighlights = roundedHighlights;
+        repaint();
+    }
+
+    public int getHighlightRadius() {
+        return highlightRadius;
+    }
+
+    /**
+     * Sets the radius of the corners of rounded highlights, in pixels; 4 by default, as the
+     * selection has. A corner is never more than half the height of a row or half the width
+     * of what it rounds, so a large radius makes a pill of a short highlight.
+     *
+     * @throws IllegalArgumentException if the radius is negative
+     */
+    public void setHighlightRadius(int radius) {
+        if (radius < 0) {
+            throw new IllegalArgumentException("negative radius: " + radius);
+        }
+        highlightRadius = radius;
+        repaint();
+    }
+
+    /** Keeps the highlights on their text after a change; one of chars whose text is gone goes with it. */
+    private void moveHighlights(TextChange change) {
+        List<Highlight> moved = new ArrayList<>(highlights.length);
+        for (Highlight highlight : highlights) {
+            int start = shifted(highlight.start(), change);
+            int end = Math.max(start, shifted(highlight.end(), change));
+            if (end > start || highlight.start() == highlight.end() || highlight.kind() == Highlight.Kind.LINE) {
+                moved.add(start == highlight.start() && end == highlight.end() ? highlight
+                        : new Highlight(start, end, highlight.color(), highlight.kind()));
+            }
+        }
+        setHighlights(moved);
+    }
+
+    /** The index of the first highlight that can reach as far as the offset. */
+    private int firstHighlightReaching(int offset) {
+        int low = 0;
+        int high = highlights.length;
+        while (low < high) {
+            int middle = (low + high) >>> 1;
+            if (highlightReach[middle] >= offset) {
+                high = middle;
+            } else {
+                low = middle + 1;
+            }
+        }
+        return low;
+    }
+
+    /** Fills the rows of the lines that highlights of lines cover, from edge to edge of the clip. */
+    private void paintLineHighlights(Graphics2D g, Rectangle clip, int firstRow, int lastRow) {
+        int from = model.lineStart(rows.lineAtRow(firstRow));
+        int to = model.lineEnd(rows.lineAtRow(lastRow));
+        for (int i = firstHighlightReaching(from); i < highlights.length && highlights[i].start() <= to; i++) {
+            Highlight highlight = highlights[i];
+            if (highlight.kind() != Highlight.Kind.LINE || highlightReach[i] < from) {
+                continue;
+            }
+            int top = getOffsetBounds(model.lineStart(model.lineOfOffset(highlight.start()))).y;
+            int bottom = getOffsetBounds(model.lineEnd(model.lineOfOffset(highlight.end()))).y + lineHeight;
+            g.setColor(highlight.color());
+            g.fillRect(clip.x, top, clip.width, bottom - top);
+        }
+    }
+
+    /** Fills the chars of the line being painted that highlights of chars cover. */
+    private void paintTextHighlights(Graphics2D g, char[] text, int lineStart, int length) {
+        int lineEnd = lineStart + length;
+        for (int i = firstHighlightReaching(lineStart); i < highlights.length && highlights[i].start() <= lineEnd; i++) {
+            Highlight highlight = highlights[i];
+            if (highlight.kind() != Highlight.Kind.TEXT || highlight.end() <= highlight.start() || highlight.end() < lineStart) {
+                continue;
+            }
+            int a = Math.max(highlight.start(), lineStart) - lineStart;
+            int b = Math.min(highlight.end(), lineEnd) - lineStart;
+            // a range that goes on past the line takes the cell of its line break too
+            boolean lineBreak = highlight.end() > lineEnd;
+            if (a < b || lineBreak) {
+                g.setColor(highlight.color());
+                if (roundedHighlights) {
+                    paintRoundedRange(g, spanLineRow + spanRow0, spanLineRow + spanRow1,
+                            highlight.start(), highlight.end(), highlightRadius);
+                } else {
+                    fillCells(g, text, a, b, lineBreak);
+                }
+            }
+        }
+    }
+
     /** The index of the first marker that can reach as far as the offset. */
     private int firstMarkerReaching(int offset) {
         int low = 0;
@@ -1869,6 +2019,9 @@ public class JCodeViewer extends JComponent implements Scrollable {
             if (firstRow > lastRow) {
                 return;
             }
+            if (highlights.length > 0) {
+                paintLineHighlights(g, clip, firstRow, lastRow);
+            }
             int lineCount = model.lineCount();
             if (indentGuides) {
                 paintIndentGuides(g, firstRow, lastRow);
@@ -1980,6 +2133,9 @@ public class JCodeViewer extends JComponent implements Scrollable {
         char[] text = readChars(lineStart + from, lineStart + to);
         int count = to - from;
 
+        if (highlights.length > 0) {
+            paintTextHighlights(g, text, lineStart, length);
+        }
         if (search != null) {
             // On a line read only in part, a match cut by the edge of the view is not marked.
             int shift = from;
@@ -2000,7 +2156,7 @@ public class JCodeViewer extends JComponent implements Scrollable {
         if (selectionStart < selectionEnd && selectionEnd > lineStart && selectionStart <= lineStart + length) {
             g.setColor(theme.selectionBackground());
             if (roundedSelection) {
-                paintRoundedSelection(g, lineRow + spanRow0, lineRow + spanRow1);
+                paintRoundedRange(g, lineRow + spanRow0, lineRow + spanRow1, selectionStart, selectionEnd, SELECTION_RADIUS);
             } else {
                 fillCells(g, text, Math.max(0, selectionStart - lineStart), Math.min(length, selectionEnd - lineStart),
                         selectionEnd > lineStart + length);
@@ -2195,12 +2351,12 @@ public class JCodeViewer extends JComponent implements Scrollable {
     }
 
     /**
-     * Fills the selection on the given rows as one smooth outline. An outer corner is rounded;
-     * where two rows of different width meet, the inner corner is rounded the other way, so
-     * the edge runs from one row into the next in an S-curve. Where the edge carries on
-     * straight into the next row there is no corner at all.
+     * Fills the chars {@code [start, end)} on the given rows as one smooth outline, as the
+     * selection is filled. An outer corner is rounded; where two rows of different width meet,
+     * the inner corner is rounded the other way, so the edge runs from one row into the next in
+     * an S-curve. Where the edge carries on straight into the next row there is no corner at all.
      */
-    private void paintRoundedSelection(Graphics2D g, int firstRow, int lastRow) {
+    private void paintRoundedRange(Graphics2D g, int firstRow, int lastRow, int start, int end, double radius) {
         Object antialiasing = g.getRenderingHint(RenderingHints.KEY_ANTIALIASING);
         g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
         int[] row = extentRow;
@@ -2208,7 +2364,7 @@ public class JCodeViewer extends JComponent implements Scrollable {
         int[] below = extentBelow;
         Path2D.Double path = selectionPath;
         for (int r = firstRow; r <= lastRow; r++) {
-            if (!selectionExtent(r, row)) {
+            if (!rangeExtent(r, start, end, row)) {
                 continue;
             }
             double left = row[0];
@@ -2216,9 +2372,10 @@ public class JCodeViewer extends JComponent implements Scrollable {
             double top = rowY(r);
             double bottom = top + lineHeight;
             // a neighbouring row matters only if it touches this one
-            boolean hasAbove = r > 0 && selectionExtent(r - 1, above) && above[0] < right && above[1] > left;
-            boolean hasBelow = r + 1 < rows.rowCount() && selectionExtent(r + 1, below) && below[0] < right && below[1] > left;
-            double limit = Math.min(SELECTION_RADIUS, Math.min((right - left) / 2, lineHeight / 2.0));
+            boolean hasAbove = r > 0 && rangeExtent(r - 1, start, end, above) && above[0] < right && above[1] > left;
+            boolean hasBelow = r + 1 < rows.rowCount() && rangeExtent(r + 1, start, end, below)
+                    && below[0] < right && below[1] > left;
+            double limit = Math.min(radius, Math.min((right - left) / 2, lineHeight / 2.0));
 
             // Outer corners. Each is zero where the neighbour covers it, and no more than half
             // the step to the neighbour's edge, which leaves the other half for the inner corner.
@@ -2240,12 +2397,12 @@ public class JCodeViewer extends JComponent implements Scrollable {
 
             // Inner corners, beside this row where a neighbour reaches further out.
             if (hasAbove) {
-                addInnerCorner(path, left, top, -innerRadius(left - above[0]), 1);
-                addInnerCorner(path, right, top, innerRadius(above[1] - right), 1);
+                addInnerCorner(path, left, top, -innerRadius(left - above[0], radius), 1);
+                addInnerCorner(path, right, top, innerRadius(above[1] - right, radius), 1);
             }
             if (hasBelow) {
-                addInnerCorner(path, left, bottom, -innerRadius(left - below[0]), -1);
-                addInnerCorner(path, right, bottom, innerRadius(below[1] - right), -1);
+                addInnerCorner(path, left, bottom, -innerRadius(left - below[0], radius), -1);
+                addInnerCorner(path, right, bottom, innerRadius(below[1] - right, radius), -1);
             }
             g.fill(path);
         }
@@ -2258,8 +2415,8 @@ public class JCodeViewer extends JComponent implements Scrollable {
     }
 
     /** The radius of an inner corner where the neighbouring row sticks out by {@code step}; zero for none. */
-    private static double innerRadius(double step) {
-        return step <= 0 ? 0 : Math.min(SELECTION_RADIUS, step / 2);
+    private static double innerRadius(double step, double radius) {
+        return step <= 0 ? 0 : Math.min(radius, step / 2);
     }
 
     /**
@@ -2280,22 +2437,20 @@ public class JCodeViewer extends JComponent implements Scrollable {
     }
 
     /**
-     * The horizontal extent of the selection on a row, in pixels, kept near the clip so that
-     * a very long line cannot overflow.
+     * The horizontal extent of the chars {@code [start, end)} on a row, in pixels, kept near
+     * the clip so that a very long line cannot overflow.
      *
-     * @return false when nothing on the row is selected
+     * @return false when none of the range is on the row
      */
-    private boolean selectionExtent(int row, int[] extent) {
+    private boolean rangeExtent(int row, int start, int end, int[] extent) {
         int line = rows.lineAtRow(row);
         int lineStart = model.lineStart(line);
         int length = model.lineLength(line);
-        int selectionStart = getSelectionStart();
-        int selectionEnd = getSelectionEnd();
-        if (selectionStart == selectionEnd || selectionEnd <= lineStart || selectionStart > lineStart + length) {
+        if (start == end || end <= lineStart || start > lineStart + length) {
             return false;
         }
-        int a = Math.max(0, selectionStart - lineStart);
-        int b = Math.min(length, selectionEnd - lineStart);
+        int a = Math.max(0, start - lineStart);
+        int b = Math.min(length, end - lineStart);
         double cellA = a;
         double cellB = b;
         if (!rows.isPlain(line)) {
@@ -2306,8 +2461,8 @@ public class JCodeViewer extends JComponent implements Scrollable {
             cellA = Cells.position(extentBuffer, 0, a, tabSize, glyphMeasure);
             cellB = Cells.position(extentBuffer, 0, b, tabSize, glyphMeasure);
         }
-        if (selectionEnd > lineStart + length) {
-            cellB++; // the line break is selected too
+        if (end > lineStart + length) {
+            cellB++; // the line break is in the range too
         }
         LineRows lineRows = lineRows(line);
         int rowInLine = row - rows.firstRow(line);

@@ -4,6 +4,7 @@ Two versions of a text are compared line by line, as `git diff` compares them, a
 written as a unified diff that a viewer highlights.
 
 - [Show the difference of two texts](#show-the-difference-of-two-texts)
+- [Backgrounds](#backgrounds)
 - [The changes as data](#the-changes-as-data)
 - [Highlighting a diff](#highlighting-a-diff)
 
@@ -55,6 +56,65 @@ right.addEditListener(e -> timer.restart());
 ```
 
 The demo `DiffDemoApp` does this.
+
+## Backgrounds
+
+`DiffHighlighter` lays backgrounds on the changes, as a review of code on the web shows them: a line taken
+away on red and a line put in on green, and the chars that changed within such a line on a stronger red or
+green. `abc` changed to `abcd` gets the `d` marked. It works on the two versions side by side, each in a
+viewer or editor of its own, and on a unified diff in one viewer:
+
+```java
+DiffHighlighter highlighter = new DiffHighlighter()
+        .granularity(Granularity.WORD)
+        .lineBackgrounds(true);
+
+// the two versions side by side
+DiffHighlighter.Sides sides = highlighter.compare(originalText, revisedText, theme);
+originalEditor.setHighlights(sides.original());
+revisedEditor.setHighlights(sides.revised());
+
+// a unified diff, written by UnifiedDiff or by git
+output.setText(patch);
+output.setHighlights(highlighter.patch(patch, theme));
+```
+
+| Option                         | What it sets                                                                  |
+|--------------------------------|-------------------------------------------------------------------------------|
+| `granularity(Granularity)`     | How finely the changes within a line are marked; `CHAR` by default            |
+| `lineBackgrounds(boolean)`     | Whether changed lines get a background from edge to edge; on by default      |
+| `minSimilarity(double)`        | How much of two lines must be the same for the changes within them to be marked; 0.5 by default |
+
+| `Granularity` | `count` changed to `total` marks          |
+|---------------|-------------------------------------------|
+| `CHAR`        | The letters that differ                   |
+| `WORD`        | The word whole, as `git diff --word-diff` |
+| `LINE`        | Nothing within the line                   |
+
+Within a change, the first line taken away is compared with the first line put in, the second with the
+second, and so on. A line left over has its line background only, and so does a pair that has less than
+`minSimilarity` in common: such lines are different lines rather than one line edited, and marks scattered
+over them would tell nothing. `minSimilarity(0)` marks the changes within every pair.
+
+The colours come from the [theme](themes.md#a-theme-of-your-own), which has four for a diff: one for a line
+and one for the chars, for each side. Every theme has them; set them with its builder to have your own:
+
+```java
+CodeTheme theme = CodeThemes.nord().toBuilder()
+        .insertedLineBackground(new Color(0x23384F))
+        .insertedTextBackground(new Color(0x2F5A85))
+        .deletedLineBackground(new Color(0x4A3324))
+        .deletedTextBackground(new Color(0x7A4A28))
+        .style(TokenType.INSERTED, TokenStyle.of(0x8EC1F0))
+        .style(TokenType.DELETED, TokenStyle.of(0xF2B17A))
+        .build();
+```
+
+A highlight holds the colour it was made with, so after the theme is changed the highlights are made
+again. The chars that changed can be marked with rounded corners, with `setRoundedHighlights(true)` on the
+viewer and `setHighlightRadius` for the size of the corners. The highlights are a
+[feature of the viewer](viewer.md#highlights), to use for anything else too.
+`InlineDiff.compare(original, revised, granularity)` gives the changes within one line as data.
 
 ## The changes as data
 

@@ -31,6 +31,9 @@ public final class CodeTheme {
     private final Color explicitIndentGuide;
     private final Color activeIndentGuide;
     private final Color explicitActiveIndentGuide;
+    /** The backgrounds of a diff: inserted line, inserted text, deleted line, deleted text. */
+    private final Color[] diffBackgrounds;
+    private final Color[] explicitDiffBackgrounds;
     /** The colour for each {@link Severity}, by ordinal. */
     private final Color[] markerColors;
     private final Color[] explicitMarkerColors;
@@ -80,6 +83,21 @@ public final class CodeTheme {
         }
         if (!builder.styles.containsKey(DELETED)) {
             styles[DELETED.ordinal()] = TokenStyle.of(markerColors[0]);
+        }
+        // The backgrounds of a diff, unless a theme sets them, are its green and red faded into
+        // its background: faintly for a line, more for the chars that changed in it.
+        Color inserted = styles[INSERTED.ordinal()].color();
+        Color deleted = styles[DELETED.ordinal()].color();
+        float line = dark ? 0.16f : 0.12f;
+        float text = dark ? 0.34f : 0.28f;
+        explicitDiffBackgrounds = builder.diffBackgrounds.clone();
+        diffBackgrounds = new Color[]{
+                mix(background, inserted, line), mix(background, inserted, text),
+                mix(background, deleted, line), mix(background, deleted, text)};
+        for (int i = 0; i < diffBackgrounds.length; i++) {
+            if (explicitDiffBackgrounds[i] != null) {
+                diffBackgrounds[i] = explicitDiffBackgrounds[i];
+            }
         }
     }
 
@@ -235,6 +253,26 @@ public final class CodeTheme {
         return activeIndentGuide;
     }
 
+    /** Background of a line a diff put in. */
+    public Color insertedLineBackground() {
+        return diffBackgrounds[0];
+    }
+
+    /** Background of the chars that changed in a line a diff put in, over its line background. */
+    public Color insertedTextBackground() {
+        return diffBackgrounds[1];
+    }
+
+    /** Background of a line a diff took away. */
+    public Color deletedLineBackground() {
+        return diffBackgrounds[2];
+    }
+
+    /** Background of the chars that changed in a line a diff took away, over its line background. */
+    public Color deletedTextBackground() {
+        return diffBackgrounds[3];
+    }
+
     /** The colour that lies the given part of the way from one colour to another. */
     private static Color mix(Color from, Color to, float part) {
         return new Color(
@@ -268,6 +306,10 @@ public final class CodeTheme {
                 .foldMarkerBorder(explicitFoldMarkerBorder)
                 .indentGuide(explicitIndentGuide)
                 .activeIndentGuide(explicitActiveIndentGuide)
+                .insertedLineBackground(explicitDiffBackgrounds[0])
+                .insertedTextBackground(explicitDiffBackgrounds[1])
+                .deletedLineBackground(explicitDiffBackgrounds[2])
+                .deletedTextBackground(explicitDiffBackgrounds[3])
                 .markerColor(Severity.ERROR, explicitMarkerColors[0])
                 .markerColor(Severity.WARNING, explicitMarkerColors[1])
                 .markerColor(Severity.INFO, explicitMarkerColors[2]);
@@ -291,6 +333,7 @@ public final class CodeTheme {
         private Color foldMarkerBorder;
         private Color indentGuide;
         private Color activeIndentGuide;
+        private final Color[] diffBackgrounds = new Color[4];
         private Color errorColor;
         private Color warningColor;
         private Color infoColor;
@@ -371,6 +414,30 @@ public final class CodeTheme {
         /** Sets the colour of the indent guide of the block the caret is in; null goes back to the one made from the background and the foreground. */
         public Builder activeIndentGuide(Color color) {
             activeIndentGuide = color;
+            return this;
+        }
+
+        /** Sets the background of a line a diff put in; null goes back to the green of the theme faded into its background. */
+        public Builder insertedLineBackground(Color color) {
+            diffBackgrounds[0] = color;
+            return this;
+        }
+
+        /** Sets the background of the chars that changed in a line put in; null goes back to the one made from the green of the theme. */
+        public Builder insertedTextBackground(Color color) {
+            diffBackgrounds[1] = color;
+            return this;
+        }
+
+        /** Sets the background of a line a diff took away; null goes back to the red of the theme faded into its background. */
+        public Builder deletedLineBackground(Color color) {
+            diffBackgrounds[2] = color;
+            return this;
+        }
+
+        /** Sets the background of the chars that changed in a line taken away; null goes back to the one made from the red of the theme. */
+        public Builder deletedTextBackground(Color color) {
+            diffBackgrounds[3] = color;
             return this;
         }
 

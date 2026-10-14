@@ -36,7 +36,9 @@ Website: https://www.swingcraft4j.com
 - Code completion with snippets, documentation and parameter hints, in a popup the user can resize
 - Error and warning markers
 - Format, for Java and ten other languages with braces, for JSON, XML and HTML, and for the tables of Markdown
-- Diff: two texts compared line by line and written as `git diff` writes them, in green and red
+- Diff: two texts compared line by line and written as `git diff` writes them, with the lines and the chars or
+  words that changed on a green or red background, side by side or in one view
+- Highlights: backgrounds behind whole lines or ranges of text, which follow the text as it is edited
 - A preview of Markdown, with tables, task lists and highlighted code blocks, in a module of its own
 - Large documents: only the visible rows are measured, tokenized and painted
 

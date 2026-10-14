@@ -82,6 +82,28 @@ class CodeThemesTest {
     }
 
     @Test
+    void makesTheBackgroundsOfADiffFromItsGreenAndRedUnlessSet() {
+        for (CodeTheme theme : CodeThemes.all()) {
+            List<Color> backgrounds = List.of(theme.insertedLineBackground(), theme.insertedTextBackground(),
+                    theme.deletedLineBackground(), theme.deletedTextBackground());
+            assertEquals(4, backgrounds.stream().distinct().count(), theme.name());
+            for (Color background : backgrounds) {
+                assertNotEquals(theme.background(), background, theme.name());
+                assertTrue(contrast(theme.foreground(), background) >= 3.0, theme.name() + ": text on " + background);
+            }
+            // a line put in is greener than the page, a line taken away redder
+            assertTrue(theme.insertedLineBackground().getGreen() - theme.insertedLineBackground().getRed()
+                    > theme.background().getGreen() - theme.background().getRed(), theme.name());
+            assertTrue(theme.deletedLineBackground().getRed() - theme.deletedLineBackground().getGreen()
+                    > theme.background().getRed() - theme.background().getGreen(), theme.name());
+        }
+        CodeTheme set = CodeTheme.light().toBuilder().insertedLineBackground(Color.CYAN).deletedTextBackground(Color.PINK).build();
+        assertEquals(Color.CYAN, set.toBuilder().build().insertedLineBackground());
+        assertEquals(Color.PINK, set.deletedTextBackground());
+        assertEquals(CodeTheme.light().deletedLineBackground(), set.deletedLineBackground());
+    }
+
+    @Test
     void aCopyKeepsTheNameUnlessGivenAnother() {
         assertEquals("Nord", CodeThemes.nord().toBuilder().background(Color.BLACK).build().name());
         assertEquals("Mine", CodeThemes.nord().toBuilder().name("Mine").build().name());
