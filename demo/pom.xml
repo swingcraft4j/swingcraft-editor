@@ -17,6 +17,8 @@
         <maven.source.skip>true</maven.source.skip>
         <maven.javadoc.skip>true</maven.javadoc.skip>
         <gpg.skip>true</gpg.skip>
+        <!-- the demo that exec:java runs; another is picked with -Dexec.mainClass -->
+        <exec.mainClass>com.swingcraft4j.code.demo.DemoApp</exec.mainClass>
     </properties>
 
     <name>SwingCraft4j Editor Demo</name>
@@ -60,9 +62,6 @@
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>exec-maven-plugin</artifactId>
-                <configuration>
-                    <mainClass>com.swingcraft4j.code.demo.DemoApp</mainClass>
-                </configuration>
             </plugin>
         </plugins>
     </build>

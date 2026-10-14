@@ -42,6 +42,8 @@ public final class CodeThemes {
                 .style(PREPROCESSOR, TokenStyle.of(0xCF222E))
                 .style(VARIABLE, TokenStyle.of(0xBC4C00))
                 .style(ERROR, TokenStyle.of(0x82071E))
+                .style(INSERTED, TokenStyle.of(0x116329))
+                .style(DELETED, TokenStyle.of(0x82071E))
                 .build();
     }
 
@@ -70,6 +72,8 @@ public final class CodeThemes {
                 .style(PREPROCESSOR, TokenStyle.of(0xCB4B16))
                 .style(VARIABLE, TokenStyle.of(0xCB4B16))
                 .style(ERROR, TokenStyle.of(0xDC322F))
+                .style(INSERTED, TokenStyle.of(0x859900))
+                .style(DELETED, TokenStyle.of(0xDC322F))
                 .build();
     }
 
@@ -98,6 +102,8 @@ public final class CodeThemes {
                 .style(PREPROCESSOR, TokenStyle.of(0xC678DD))
                 .style(VARIABLE, TokenStyle.of(0xE06C75))
                 .style(ERROR, TokenStyle.of(0xF44747))
+                .style(INSERTED, TokenStyle.of(0x98C379))
+                .style(DELETED, TokenStyle.of(0xE06C75))
                 .build();
     }
 
@@ -126,6 +132,8 @@ public final class CodeThemes {
                 .style(PREPROCESSOR, TokenStyle.of(0xFF79C6))
                 .style(VARIABLE, TokenStyle.of(0xFFB86C))
                 .style(ERROR, TokenStyle.of(0xFF5555))
+                .style(INSERTED, TokenStyle.of(0x50FA7B))
+                .style(DELETED, TokenStyle.of(0xFF5555))
                 .build();
     }
 
@@ -154,6 +162,8 @@ public final class CodeThemes {
                 .style(PREPROCESSOR, TokenStyle.of(0xF92672))
                 .style(VARIABLE, TokenStyle.of(0xFD971F))
                 .style(ERROR, new TokenStyle(new Color(0xF92672), Font.BOLD))
+                .style(INSERTED, TokenStyle.of(0xA6E22E))
+                .style(DELETED, TokenStyle.of(0xF92672))
                 .build();
     }
 
@@ -183,6 +193,8 @@ public final class CodeThemes {
                 .style(PREPROCESSOR, TokenStyle.of(0x5E81AC))
                 .style(VARIABLE, TokenStyle.of(0xEBCB8B))
                 .style(ERROR, TokenStyle.of(0xBF616A))
+                .style(INSERTED, TokenStyle.of(0xA3BE8C))
+                .style(DELETED, TokenStyle.of(0xBF616A))
                 .build();
     }
 

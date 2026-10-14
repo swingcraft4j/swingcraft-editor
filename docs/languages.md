@@ -19,6 +19,7 @@ its comments are written.
 | `cpp`        | C++        | `cpp`, `cc`, `cxx`, `hpp`, `hh`, `hxx`   |
 | `csharp`     | C#         | `cs`                                     |
 | `css`        | CSS        | `css`                                    |
+| `diff`       | Diff       | `diff`, `patch`                          |
 | `dockerfile` | Dockerfile | `dockerfile`, and the name `Dockerfile`  |
 | `env`        | Env        | `env`, as in `.env`                      |
 | `go`         | Go         | `go`                                     |
@@ -252,4 +253,5 @@ public final class ConfLanguage extends RuleLanguage {
 A lexer names what each piece of text is with a `TokenType`; a [theme](themes.md) gives each type its colour.
 
 `TEXT`, `KEYWORD`, `LITERAL`, `TYPE`, `FUNCTION`, `CONSTANT`, `IDENTIFIER`, `STRING`, `NUMBER`, `COMMENT`,
-`DOC_COMMENT`, `ANNOTATION`, `OPERATOR`, `PUNCTUATION`, `TAG`, `ATTRIBUTE`, `PREPROCESSOR`, `VARIABLE`, `ERROR`
+`DOC_COMMENT`, `ANNOTATION`, `OPERATOR`, `PUNCTUATION`, `TAG`, `ATTRIBUTE`, `PREPROCESSOR`, `VARIABLE`, `ERROR`,
+`INSERTED`, `DELETED`

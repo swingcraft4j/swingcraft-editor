@@ -21,5 +21,9 @@ public enum TokenType {
     PREPROCESSOR,
     /** A placeholder to be filled in later, such as {@code {{name}}} in a template. */
     VARIABLE,
-    ERROR
+    ERROR,
+    /** Text that one version has and the version before it has not, such as a line of a diff that starts with {@code +}. */
+    INSERTED,
+    /** Text that the version before had and this one has not, such as a line of a diff that starts with {@code -}. */
+    DELETED
 }

@@ -2,6 +2,7 @@ com.swingcraft4j.code.languages.c.CLanguage
 com.swingcraft4j.code.languages.c.CppLanguage
 com.swingcraft4j.code.languages.csharp.CSharpLanguage
 com.swingcraft4j.code.languages.css.CssLanguage
+com.swingcraft4j.code.languages.diff.DiffLanguage
 com.swingcraft4j.code.languages.docker.DockerfileLanguage
 com.swingcraft4j.code.languages.config.EnvLanguage
 com.swingcraft4j.code.languages.go.GoLanguage

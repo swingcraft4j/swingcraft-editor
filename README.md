@@ -18,14 +18,15 @@ completion, and a preview of Markdown. The code editor has no dependencies.
 | Code completion | Suggestions, snippets, documentation and parameter hints                         | [Code completion](docs/autocomplete.md) |
 | Markers        | Errors and warnings underlined in the text and marked in the gutter               | [Markers](docs/markers.md)              |
 | Format         | Laying the text out afresh: indentation and spaces of code, JSON, XML, HTML, tables of Markdown | [Format](docs/format.md)             |
+| Diff           | Two texts compared as `git diff` compares them, and the diff highlighted          | [Diff](docs/diff.md)                    |
 
 Website: https://www.swingcraft4j.com
 
 ## Features
 
-- Syntax highlighting for 25 languages, and for your own: C, C++, C#, CSS, Dockerfile, Env, Go, Groovy, HTML,
-  INI, Java, JavaScript, TypeScript, JSON, Kotlin, Markdown, PHP, Properties, Python, Rust, Shell, SQL, TOML,
-  XML and YAML
+- Syntax highlighting for 26 languages, and for your own: C, C++, C#, CSS, Diff, Dockerfile, Env, Go, Groovy,
+  HTML, INI, Java, JavaScript, TypeScript, JSON, Kotlin, Markdown, PHP, Properties, Python, Rust, Shell, SQL,
+  TOML, XML and YAML
 - CSS and JavaScript highlighted inside HTML, and the code of a fenced block inside Markdown
 - Line wrap, at any char or at words
 - Line numbers, code folding, matching brackets and indent guides
@@ -35,6 +36,7 @@ Website: https://www.swingcraft4j.com
 - Code completion with snippets, documentation and parameter hints, in a popup the user can resize
 - Error and warning markers
 - Format, for Java and ten other languages with braces, for JSON, XML and HTML, and for the tables of Markdown
+- Diff: two texts compared line by line and written as `git diff` writes them, in green and red
 - A preview of Markdown, with tables, task lists and highlighted code blocks, in a module of its own
 - Large documents: only the visible rows are measured, tokenized and painted
 
@@ -101,17 +103,8 @@ pane. All the methods must be called on the event dispatch thread.
 
 ## Demo
 
-The `demo` module has six demos. It is not published, and it is the only module that uses
+The `demo` module has the demos. It is not published, and it is the only module that uses
 [FlatLaf](https://github.com/JFormDesigner/FlatLaf).
-
-| Class              | What it shows                                                        |
-|--------------------|----------------------------------------------------------------------|
-| `DemoApp`          | The viewer, with the languages, the themes and a file of a million lines |
-| `EditorDemoApp`    | The editor, with code completion, parameter hints and markers        |
-| `CompletionDemoApp` | Code completion on a script of JavaScript: globals, members after a dot, snippets, parameter hints |
-| `VariablesDemoApp` | Syntax of your own laid over a language: `{{variables}}` in JSON, and in a field of one line |
-| `FieldDemoApp`     | Text fields for one line of code: a template with variables, a condition of SQL, JSON, a regular expression |
-| `MarkdownDemoApp`  | Markdown edited at the left and previewed at the right               |
 
 ```
 mvn install

@@ -74,6 +74,13 @@ public final class CodeTheme {
         for (TokenType type : types) {
             styles[type.ordinal()] = builder.styles.getOrDefault(type, plain);
         }
+        // What was added and taken away in a diff is green and red even where a theme says nothing of it.
+        if (!builder.styles.containsKey(INSERTED)) {
+            styles[INSERTED.ordinal()] = TokenStyle.of(dark ? 0x6AAB73 : 0x1A7F37);
+        }
+        if (!builder.styles.containsKey(DELETED)) {
+            styles[DELETED.ordinal()] = TokenStyle.of(markerColors[0]);
+        }
     }
 
     public static Builder builder() {
@@ -107,6 +114,8 @@ public final class CodeTheme {
                 .style(PREPROCESSOR, TokenStyle.of(0x9E880D))
                 .style(VARIABLE, TokenStyle.of(0xC4570F))
                 .style(ERROR, TokenStyle.of(0xD1242F))
+                .style(INSERTED, TokenStyle.of(0x067D17))
+                .style(DELETED, TokenStyle.of(0xD1242F))
                 .build();
     }
 
@@ -137,6 +146,8 @@ public final class CodeTheme {
                 .style(PREPROCESSOR, TokenStyle.of(0xB3AE60))
                 .style(VARIABLE, TokenStyle.of(0xE8A46A))
                 .style(ERROR, TokenStyle.of(0xF75464))
+                .style(INSERTED, TokenStyle.of(0x6AAB73))
+                .style(DELETED, TokenStyle.of(0xF75464))
                 .build();
     }
 

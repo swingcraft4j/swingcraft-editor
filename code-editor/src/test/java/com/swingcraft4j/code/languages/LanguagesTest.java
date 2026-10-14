@@ -30,7 +30,7 @@ class LanguagesTest {
 
     @Test
     void findsEveryLanguageByFileName() {
-        assertEquals(List.of("c", "cpp", "csharp", "css", "dockerfile", "env", "go", "groovy", "html", "ini", "java", "javascript",
+        assertEquals(List.of("c", "cpp", "csharp", "css", "diff", "dockerfile", "env", "go", "groovy", "html", "ini", "java", "javascript",
                         "typescript", "json", "kotlin", "markdown", "php", "properties", "python", "rust", "shell", "sql", "toml", "xml", "yaml"),
                 Languages.installed().stream().map(Language::id).toList());
         assertEquals("xml", Languages.forFileName("pom.xml").orElseThrow().id());
@@ -42,6 +42,7 @@ class LanguagesTest {
         assertEquals("groovy", Languages.forFileName("build.gradle").orElseThrow().id());
         assertEquals("cpp", Languages.forFileName("item.hpp").orElseThrow().id());
         assertEquals("env", Languages.forFileName(".env").orElseThrow().id());
+        assertEquals("diff", Languages.forFileName("fix.patch").orElseThrow().id());
         assertEquals("yaml", Languages.forFileName("docker-compose.yml").orElseThrow().id());
         assertEquals("shell", Languages.forFileName("deploy.sh").orElseThrow().id());
         // a name without a dot is looked up as it is
@@ -213,6 +214,32 @@ class LanguagesTest {
         assertEquals("FUNCTION:log | PUNCTUATION:( | PUNCTUATION:) | PUNCTUATION:{ | FUNCTION:printf | STRING:'%s' | STRING:\"$@\""
                         + " | OPERATOR:; | PUNCTUATION:}",
                 line("shell", "log() { printf '%s' \"$@\"; }"));
+    }
+
+    @Test
+    void diffCountsTheLinesOfAHunkSoALineLikeAHeaderIsNoHeader() {
+        assertEquals(List.of(
+                        List.of("KEYWORD:diff --git a/q.sql b/q.sql"),
+                        List.of("KEYWORD:--- a/q.sql"),
+                        List.of("KEYWORD:+++ b/q.sql"),
+                        List.of("TYPE:@@ -1,3 +1,3 @@"),
+                        List.of(),
+                        // a comment of SQL taken away, which looks like the header of a file
+                        List.of("DELETED:--- old"),
+                        List.of("INSERTED:+++ new"),
+                        List.of("COMMENT:\\ No newline at end of file"),
+                        List.of(),
+                        // the hunk is over, so this is the next file
+                        List.of("KEYWORD:--- a/r.sql"),
+                        List.of("KEYWORD:+++ b/r.sql"),
+                        List.of("TYPE:@@ -0,0 +1 @@"),
+                        List.of("INSERTED:+one"),
+                        List.of("KEYWORD:--- a/s.sql")),
+                lex("diff", "diff --git a/q.sql b/q.sql", "--- a/q.sql", "+++ b/q.sql", "@@ -1,3 +1,3 @@", " select 1;",
+                        "--- old", "+++ new", "\\ No newline at end of file", " select 2;",
+                        "--- a/r.sql", "+++ b/r.sql", "@@ -0,0 +1 @@", "+one", "--- a/s.sql"));
+        // the name of a function after the header of a hunk is text
+        assertEquals("TYPE:@@ -10,6 +10,7 @@", line("diff", "@@ -10,6 +10,7 @@ void main()"));
     }
 
     @Test
