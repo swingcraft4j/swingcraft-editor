@@ -9,6 +9,8 @@ style for each [token type](languages.md#token-types).
 - [A theme of your own](#a-theme-of-your-own)
 - [Follow the look and feel](#follow-the-look-and-feel)
 
+A theme can also be read from an XML file; see [Config files](config.md).
+
 ## Set a theme
 
 ```java

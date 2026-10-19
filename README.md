@@ -19,6 +19,7 @@ completion, and a preview of Markdown. The code editor has no dependencies.
 | Markers        | Errors and warnings underlined in the text and marked in the gutter               | [Markers](docs/markers.md)              |
 | Format         | Laying the text out afresh: indentation and spaces of code, JSON, XML, HTML, tables of Markdown | [Format](docs/format.md)             |
 | Diff           | Two texts compared as `git diff` compares them, and the diff highlighted          | [Diff](docs/diff.md)                    |
+| Config files   | A theme and the settings of a viewer or an editor, read from an XML file          | [Config files](docs/config.md)          |
 
 Website: https://www.swingcraft4j.com
 
@@ -33,6 +34,7 @@ Website: https://www.swingcraft4j.com
 - A text field for one line of code, which looks like the text fields of the look and feel
 - Find, with match case, whole word and regular expression, and go to line
 - Eight colour themes, light and dark
+- Themes and settings read from an XML file: line numbers, rounded selection, font, tab size and the rest
 - Code completion with snippets, documentation and parameter hints, in a popup the user can resize
 - Error and warning markers
 - Format, for Java and ten other languages with braces, for JSON, XML and HTML, and for the tables of Markdown
