@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  GitHub Dark Dimmed: the softer of the dark themes of GitHub, a grey-blue background in place
+  of near black, with the text dimmed to match. Like GitHub Dark it starts from the Dark theme.
+-->
+<theme base="Dark" name="GitHub Dark Dimmed">
+    <background>#22272E</background>
+    <foreground>#ADBAC7</foreground>
+    <selectionBackground>#2F4766</selectionBackground>
+    <searchBackground>#5E4A1C</searchBackground>
+    <currentLineBackground>#2D333B</currentLineBackground>
+    <bracketMatchBackground>#2C4A4A</bracketMatchBackground>
+    <gutterBackground>#22272E</gutterBackground>
+    <gutterForeground>#636E7B</gutterForeground>
+    <gutterBorder>#373E47</gutterBorder>
+
+    <style token="keyword" color="#F47067"/>
+    <style token="literal" color="#6CB6FF"/>
+    <style token="type" color="#F69D50"/>
+    <style token="function" color="#DCBDFB"/>
+    <style token="constant" color="#6CB6FF"/>
+    <style token="string" color="#96D0FF"/>
+    <style token="number" color="#6CB6FF"/>
+    <style token="comment" color="#768390" font="italic"/>
+    <style token="doc_comment" color="#768390" font="italic"/>
+    <style token="annotation" color="#DCBDFB"/>
+    <style token="operator" color="#F47067"/>
+    <style token="tag" color="#8DDB8C"/>
+    <style token="attribute" color="#6CB6FF"/>
+    <style token="preprocessor" color="#F47067"/>
+    <style token="variable" color="#F69D50"/>
+    <style token="error" color="#E5534B"/>
+    <style token="inserted" color="#8DDB8C"/>
+    <style token="deleted" color="#FF938A"/>
+
+    <markerColor severity="error">#E5534B</markerColor>
+    <markerColor severity="warning">#C69026</markerColor>
+    <markerColor severity="info">#539BF5</markerColor>
+</theme>

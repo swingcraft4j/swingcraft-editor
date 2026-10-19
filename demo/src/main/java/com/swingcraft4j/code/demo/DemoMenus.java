@@ -5,6 +5,7 @@ import com.formdev.flatlaf.fonts.jetbrains_mono.FlatJetBrainsMonoFont;
 import com.formdev.flatlaf.fonts.roboto.FlatRobotoFont;
 import com.formdev.flatlaf.fonts.roboto_mono.FlatRobotoMonoFont;
 import com.formdev.flatlaf.util.FontUtils;
+import com.swingcraft4j.code.config.EditorConfig;
 import com.swingcraft4j.code.lexer.Language;
 import com.swingcraft4j.code.lexer.Languages;
 import com.swingcraft4j.code.theme.CodeTheme;
@@ -13,15 +14,25 @@ import com.swingcraft4j.code.viewer.JCodeViewer;
 
 import javax.swing.ButtonGroup;
 import javax.swing.JCheckBoxMenuItem;
+import javax.swing.JFileChooser;
 import javax.swing.JMenu;
 import javax.swing.JMenuItem;
+import javax.swing.JOptionPane;
 import javax.swing.JRadioButtonMenuItem;
 import javax.swing.KeyStroke;
+import javax.swing.SwingUtilities;
+import javax.swing.filechooser.FileNameExtensionFilter;
+import java.awt.Component;
 import java.awt.Font;
 import java.awt.event.KeyEvent;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.UncheckedIOException;
+import java.nio.file.Path;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Optional;
 import java.util.function.Consumer;
 
 /** The menus of the demos, and what their items are made of. */
@@ -31,6 +42,11 @@ final class DemoMenus {
     private static final String[] FONT_FAMILIES = {
             FlatRobotoFont.FAMILY, FlatRobotoMonoFont.FAMILY, FlatInterFont.FAMILY, FlatJetBrainsMonoFont.FAMILY};
     private static final int[] FONT_SIZES = {10, 11, 12, 13, 14, 15, 16, 18, 20, 24};
+    /** The themes the demo reads from XML, as an application reads those its users write; the light ones first. */
+    private static final String[] XML_THEMES = {
+            "one-light.xml", "gruvbox-light.xml", "catppuccin-latte.xml",
+            "github-dark.xml", "github-dark-dimmed.xml", "solarized-dark.xml", "gruvbox-dark.xml",
+            "tokyo-night.xml", "catppuccin-mocha.xml", "kanagawa.xml"};
 
     private DemoMenus() {
     }
@@ -84,20 +100,70 @@ final class DemoMenus {
         return view;
     }
 
-    /** The themes; the one picked is also what decides between the light and the dark Look and Feel. */
+    /**
+     * The themes; the one picked is also what decides between the light and the dark Look and
+     * Feel. The built-in ones come first, then those the demo reads from XML files, and last an
+     * item to open a theme file of one's own.
+     */
     static JMenu themes(CodeTheme current, Consumer<CodeTheme> apply) {
         JMenu themes = menu("Theme", 'T');
         ButtonGroup group = new ButtonGroup();
+        Consumer<CodeTheme> pick = theme -> {
+            apply.accept(theme);
+            DemoLookAndFeel.follow(theme);
+        };
         for (CodeTheme theme : CodeThemes.all()) {
-            JRadioButtonMenuItem item = new JRadioButtonMenuItem(theme.toString(), theme.name().equals(current.name()));
-            item.addActionListener(e -> {
-                apply.accept(theme);
-                DemoLookAndFeel.follow(theme);
-            });
-            group.add(item);
+            themes.add(themeItem(theme, current, group, pick));
+        }
+        themes.addSeparator();
+        for (String file : XML_THEMES) {
+            JRadioButtonMenuItem item = themeItem(xmlTheme(file), current, group, pick);
+            item.setToolTipText("Read from themes/" + file);
             themes.add(item);
         }
+        themes.addSeparator();
+        themes.add(item("Open Theme File...", null, () -> openThemeFile(themes, group, pick)));
         return themes;
+    }
+
+    private static JRadioButtonMenuItem themeItem(CodeTheme theme, CodeTheme current, ButtonGroup group, Consumer<CodeTheme> pick) {
+        JRadioButtonMenuItem item = new JRadioButtonMenuItem(theme.toString(), theme.name().equals(current.name()));
+        item.addActionListener(e -> pick.accept(theme));
+        group.add(item);
+        return item;
+    }
+
+    private static CodeTheme xmlTheme(String file) {
+        try (InputStream in = DemoMenus.class.getResourceAsStream("themes/" + file)) {
+            if (in == null) {
+                throw new IllegalStateException("no theme file themes/" + file);
+            }
+            return EditorConfig.read(in).theme().orElseThrow();
+        } catch (IOException e) {
+            throw new UncheckedIOException("themes/" + file + ": " + e.getMessage(), e);
+        }
+    }
+
+    /** Reads a theme from a file the user picks, and says what is wrong with one that cannot be read. */
+    private static void openThemeFile(JMenu menu, ButtonGroup group, Consumer<CodeTheme> pick) {
+        JFileChooser chooser = new JFileChooser();
+        chooser.setFileFilter(new FileNameExtensionFilter("Theme files (*.xml)", "xml"));
+        Component parent = SwingUtilities.getWindowAncestor(menu);
+        if (chooser.showOpenDialog(parent) != JFileChooser.APPROVE_OPTION) {
+            return;
+        }
+        Path file = chooser.getSelectedFile().toPath();
+        try {
+            Optional<CodeTheme> theme = EditorConfig.read(file).theme();
+            if (theme.isEmpty()) {
+                JOptionPane.showMessageDialog(parent, file.getFileName() + " has no <theme>.", "Open Theme File", JOptionPane.WARNING_MESSAGE);
+                return;
+            }
+            group.clearSelection();
+            pick.accept(theme.get());
+        } catch (IOException e) {
+            JOptionPane.showMessageDialog(parent, file.getFileName() + "\n" + e.getMessage(), "Open Theme File", JOptionPane.ERROR_MESSAGE);
+        }
     }
 
     /** The family and the size of the font of a viewer or an editor. */

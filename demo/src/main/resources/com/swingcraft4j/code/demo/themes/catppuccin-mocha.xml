@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Catppuccin Mocha: a theme written whole, with the fold mark and the indent guides set too. -->
+<theme name="Catppuccin Mocha">
+    <background>#1E1E2E</background>
+    <foreground>#CDD6F4</foreground>
+    <selectionBackground>#45475A</selectionBackground>
+    <searchBackground>#5B4E3A</searchBackground>
+    <currentLineBackground>#252536</currentLineBackground>
+    <bracketMatchBackground>#3E5767</bracketMatchBackground>
+    <gutterBackground>#181825</gutterBackground>
+    <gutterForeground>#7F849C</gutterForeground>
+    <gutterBorder>#313244</gutterBorder>
+    <foldMarkerBackground>#313244</foldMarkerBackground>
+    <foldMarkerBorder>#585B70</foldMarkerBorder>
+    <indentGuide>#313244</indentGuide>
+    <activeIndentGuide>#6C7086</activeIndentGuide>
+
+    <style token="keyword" color="#CBA6F7"/>
+    <style token="literal" color="#FAB387"/>
+    <style token="type" color="#F9E2AF"/>
+    <style token="function" color="#89B4FA"/>
+    <style token="constant" color="#FAB387"/>
+    <style token="string" color="#A6E3A1"/>
+    <style token="number" color="#FAB387"/>
+    <style token="comment" color="#7F849C" font="italic"/>
+    <style token="doc_comment" color="#9399B2" font="italic"/>
+    <style token="annotation" color="#F9E2AF"/>
+    <style token="operator" color="#89DCEB"/>
+    <style token="punctuation" color="#BAC2DE"/>
+    <style token="tag" color="#89B4FA"/>
+    <style token="attribute" color="#F9E2AF"/>
+    <style token="preprocessor" color="#F5C2E7"/>
+    <style token="variable" color="#F38BA8"/>
+    <style token="error" color="#F38BA8"/>
+    <style token="inserted" color="#A6E3A1"/>
+    <style token="deleted" color="#F38BA8"/>
+
+    <markerColor severity="error">#F38BA8</markerColor>
+    <markerColor severity="warning">#F9E2AF</markerColor>
+    <markerColor severity="info">#89B4FA</markerColor>
+</theme>

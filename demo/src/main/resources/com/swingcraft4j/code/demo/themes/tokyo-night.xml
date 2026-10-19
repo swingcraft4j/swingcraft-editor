@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Tokyo Night: a theme written whole, without a base. -->
+<theme name="Tokyo Night">
+    <background>#1A1B26</background>
+    <foreground>#C0CAF5</foreground>
+    <selectionBackground>#33467C</selectionBackground>
+    <searchBackground>#3D59A1</searchBackground>
+    <currentLineBackground>#1F2335</currentLineBackground>
+    <bracketMatchBackground>#3B4261</bracketMatchBackground>
+    <gutterBackground>#1A1B26</gutterBackground>
+    <gutterForeground>#565F89</gutterForeground>
+    <gutterBorder>#292E42</gutterBorder>
+
+    <style token="keyword" color="#BB9AF7" font="italic"/>
+    <style token="literal" color="#FF9E64"/>
+    <style token="type" color="#2AC3DE"/>
+    <style token="function" color="#7AA2F7"/>
+    <style token="constant" color="#FF9E64"/>
+    <style token="string" color="#9ECE6A"/>
+    <style token="number" color="#FF9E64"/>
+    <style token="comment" color="#6A73A0" font="italic"/>
+    <style token="doc_comment" color="#7A82AE" font="italic"/>
+    <style token="annotation" color="#E0AF68"/>
+    <style token="operator" color="#89DDFF"/>
+    <style token="punctuation" color="#A9B1D6"/>
+    <style token="tag" color="#F7768E"/>
+    <style token="attribute" color="#73DACA"/>
+    <style token="preprocessor" color="#BB9AF7"/>
+    <style token="variable" color="#E0AF68"/>
+    <style token="error" color="#F7768E"/>
+    <style token="inserted" color="#9ECE6A"/>
+    <style token="deleted" color="#F7768E"/>
+
+    <markerColor severity="error">#F7768E</markerColor>
+    <markerColor severity="warning">#E0AF68</markerColor>
+    <markerColor severity="info">#7AA2F7</markerColor>
+</theme>

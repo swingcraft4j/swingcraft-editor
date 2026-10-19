@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Solarized Dark: Solarized Light on the dark tones. The accents of Solarized are the same in
+  both, so the base gives the colours of the tokens and only the tones are set here.
+-->
+<theme base="Solarized Light" name="Solarized Dark">
+    <background>#002B36</background>
+    <foreground>#93A1A1</foreground>
+    <selectionBackground>#0E4A57</selectionBackground>
+    <searchBackground>#4A4A1A</searchBackground>
+    <currentLineBackground>#073642</currentLineBackground>
+    <bracketMatchBackground>#1F5F5B</bracketMatchBackground>
+    <gutterBackground>#073642</gutterBackground>
+    <gutterForeground>#657B83</gutterForeground>
+    <gutterBorder>#0D4552</gutterBorder>
+
+    <style token="comment" color="#6C8288" font="italic"/>
+    <style token="doc_comment" color="#6C8288" font="italic"/>
+</theme>

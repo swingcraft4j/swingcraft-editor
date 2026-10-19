@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Kanagawa: the colours of Hokusai's Great Wave, muted blues and golds, written whole. -->
+<theme name="Kanagawa">
+    <background>#1F1F28</background>
+    <foreground>#DCD7BA</foreground>
+    <selectionBackground>#2D4F67</selectionBackground>
+    <searchBackground>#49443C</searchBackground>
+    <currentLineBackground>#2A2A37</currentLineBackground>
+    <bracketMatchBackground>#3B4A50</bracketMatchBackground>
+    <gutterBackground>#1F1F28</gutterBackground>
+    <gutterForeground>#54546D</gutterForeground>
+    <gutterBorder>#2A2A37</gutterBorder>
+    <indentGuide>#2A2A37</indentGuide>
+    <activeIndentGuide>#54546D</activeIndentGuide>
+
+    <style token="keyword" color="#957FB8" font="italic"/>
+    <style token="literal" color="#FFA066"/>
+    <style token="type" color="#7AA89F"/>
+    <style token="function" color="#7E9CD8"/>
+    <style token="constant" color="#FFA066"/>
+    <style token="string" color="#98BB6C"/>
+    <style token="number" color="#D27E99"/>
+    <style token="comment" color="#727169" font="italic"/>
+    <style token="doc_comment" color="#727169" font="italic"/>
+    <style token="annotation" color="#E6C384"/>
+    <style token="operator" color="#C0A36E"/>
+    <style token="punctuation" color="#9CABCA"/>
+    <style token="tag" color="#7E9CD8"/>
+    <style token="attribute" color="#E6C384"/>
+    <style token="preprocessor" color="#E46876"/>
+    <style token="variable" color="#E6C384"/>
+    <style token="error" color="#E82424"/>
+    <style token="inserted" color="#76946A"/>
+    <style token="deleted" color="#C34043"/>
+
+    <markerColor severity="error">#E82424</markerColor>
+    <markerColor severity="warning">#FF9E3B</markerColor>
+    <markerColor severity="info">#658594</markerColor>
+</theme>

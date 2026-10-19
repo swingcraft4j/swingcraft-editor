@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  One Light: the light side of One Dark. It starts from the built-in Light theme, so the
+  colours of a diff and of the markers it does not set come from there.
+-->
+<theme base="Light" name="One Light">
+    <background>#FAFAFA</background>
+    <foreground>#383A42</foreground>
+    <selectionBackground>#D7DAE0</selectionBackground>
+    <searchBackground>#F5E2A8</searchBackground>
+    <currentLineBackground>#F0F0F1</currentLineBackground>
+    <bracketMatchBackground>#C4DDE0</bracketMatchBackground>
+    <gutterBackground>#FAFAFA</gutterBackground>
+    <gutterForeground>#9D9D9F</gutterForeground>
+    <gutterBorder>#E5E5E6</gutterBorder>
+
+    <style token="keyword" color="#A626A4"/>
+    <style token="literal" color="#986801"/>
+    <style token="type" color="#C18401"/>
+    <style token="function" color="#4078F2"/>
+    <style token="constant" color="#986801"/>
+    <style token="identifier" color="#383A42"/>
+    <style token="string" color="#50A14F"/>
+    <style token="number" color="#986801"/>
+    <style token="comment" color="#A0A1A7" font="italic"/>
+    <style token="doc_comment" color="#A0A1A7" font="italic"/>
+    <style token="annotation" color="#C18401"/>
+    <style token="operator" color="#0184BC"/>
+    <style token="punctuation" color="#383A42"/>
+    <style token="tag" color="#E45649"/>
+    <style token="attribute" color="#986801"/>
+    <style token="preprocessor" color="#A626A4"/>
+    <style token="variable" color="#E45649"/>
+    <style token="error" color="#CA1243"/>
+    <style token="inserted" color="#50A14F"/>
+    <style token="deleted" color="#E45649"/>
+</theme>

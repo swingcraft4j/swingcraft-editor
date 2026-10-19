@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Catppuccin Latte: the light flavour of Catppuccin Mocha, written whole. -->
+<theme name="Catppuccin Latte">
+    <background>#EFF1F5</background>
+    <foreground>#4C4F69</foreground>
+    <selectionBackground>#CCD0DA</selectionBackground>
+    <searchBackground>#F4DFB0</searchBackground>
+    <currentLineBackground>#E6E9EF</currentLineBackground>
+    <bracketMatchBackground>#BCE0DA</bracketMatchBackground>
+    <gutterBackground>#E6E9EF</gutterBackground>
+    <gutterForeground>#8C8FA1</gutterForeground>
+    <gutterBorder>#DCE0E8</gutterBorder>
+
+    <style token="keyword" color="#8839EF"/>
+    <style token="literal" color="#FE640B"/>
+    <style token="type" color="#C46A07"/>
+    <style token="function" color="#1E66F5"/>
+    <style token="constant" color="#E2500A"/>
+    <style token="string" color="#40A02B"/>
+    <style token="number" color="#E2500A"/>
+    <style token="comment" color="#7C7F93" font="italic"/>
+    <style token="doc_comment" color="#7C7F93" font="italic"/>
+    <style token="annotation" color="#C46A07"/>
+    <style token="operator" color="#04A5E5"/>
+    <style token="punctuation" color="#5C5F77"/>
+    <style token="tag" color="#1E66F5"/>
+    <style token="attribute" color="#C46A07"/>
+    <style token="preprocessor" color="#EA76CB"/>
+    <style token="variable" color="#D20F39"/>
+    <style token="error" color="#D20F39"/>
+    <style token="inserted" color="#40A02B"/>
+    <style token="deleted" color="#D20F39"/>
+
+    <markerColor severity="error">#D20F39</markerColor>
+    <markerColor severity="warning">#C46A07</markerColor>
+    <markerColor severity="info">#1E66F5</markerColor>
+</theme>

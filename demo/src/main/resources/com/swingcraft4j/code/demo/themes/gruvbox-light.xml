@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Gruvbox Light: a light theme written whole, with bold keywords. -->
+<theme name="Gruvbox Light">
+    <background>#FBF1C7</background>
+    <foreground>#3C3836</foreground>
+    <selectionBackground>#D5C4A1</selectionBackground>
+    <searchBackground>#F2D98B</searchBackground>
+    <currentLineBackground>#F2E5BC</currentLineBackground>
+    <bracketMatchBackground>#C9D6A3</bracketMatchBackground>
+    <gutterBackground>#F2E5BC</gutterBackground>
+    <gutterForeground>#928374</gutterForeground>
+    <gutterBorder>#E0D3AA</gutterBorder>
+
+    <style token="keyword" color="#9D0006" font="bold"/>
+    <style token="literal" color="#8F3F71"/>
+    <style token="type" color="#B57614"/>
+    <style token="function" color="#076678"/>
+    <style token="constant" color="#8F3F71"/>
+    <style token="string" color="#79740E"/>
+    <style token="number" color="#8F3F71"/>
+    <style token="comment" color="#7C6F64" font="italic"/>
+    <style token="doc_comment" color="#7C6F64" font="italic"/>
+    <style token="annotation" color="#AF3A03"/>
+    <style token="operator" color="#427B58"/>
+    <style token="tag" color="#076678"/>
+    <style token="attribute" color="#B57614"/>
+    <style token="preprocessor" color="#AF3A03"/>
+    <style token="variable" color="#427B58"/>
+    <style token="error" color="#CC241D"/>
+    <style token="inserted" color="#79740E"/>
+    <style token="deleted" color="#9D0006"/>
+
+    <markerColor severity="error">#CC241D</markerColor>
+    <markerColor severity="warning">#B57614</markerColor>
+    <markerColor severity="info">#076678</markerColor>
+</theme>

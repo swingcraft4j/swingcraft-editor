@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  GitHub Dark: the Dark theme in the colours of GitHub. What is not set here, such as the
+  indent guides and the backgrounds of a diff, the theme makes from its background and its
+  foreground.
+-->
+<theme base="Dark" name="GitHub Dark">
+    <background>#0D1117</background>
+    <foreground>#E6EDF3</foreground>
+    <selectionBackground>#264F78</selectionBackground>
+    <searchBackground>#5A4A12</searchBackground>
+    <currentLineBackground>#161B22</currentLineBackground>
+    <bracketMatchBackground>#1F4B4B</bracketMatchBackground>
+    <gutterBackground>#0D1117</gutterBackground>
+    <gutterForeground>#6E7681</gutterForeground>
+    <gutterBorder>#21262D</gutterBorder>
+
+    <style token="keyword" color="#FF7B72"/>
+    <style token="literal" color="#79C0FF"/>
+    <style token="type" color="#FFA657"/>
+    <style token="function" color="#D2A8FF"/>
+    <style token="constant" color="#79C0FF"/>
+    <style token="string" color="#A5D6FF"/>
+    <style token="number" color="#79C0FF"/>
+    <style token="comment" color="#8B949E" font="italic"/>
+    <style token="doc_comment" color="#8B949E" font="italic"/>
+    <style token="annotation" color="#D2A8FF"/>
+    <style token="operator" color="#FF7B72"/>
+    <style token="tag" color="#7EE787"/>
+    <style token="attribute" color="#79C0FF"/>
+    <style token="preprocessor" color="#FF7B72"/>
+    <style token="variable" color="#FFA657"/>
+    <style token="error" color="#F85149"/>
+    <style token="inserted" color="#7EE787"/>
+    <style token="deleted" color="#FFA198"/>
+</theme>
