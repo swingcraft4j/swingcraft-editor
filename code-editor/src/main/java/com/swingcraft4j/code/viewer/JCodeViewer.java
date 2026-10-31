@@ -1850,7 +1850,7 @@ public class JCodeViewer extends JComponent implements Scrollable {
                 c.dispose();
             }
         }
-        g.setColor(theme.gutterBorder());
+        g.setColor(theme.stickyLinesBorder());
         g.fillRect(view.x, stuck.get(stuck.size() - 1).y() + lineHeight - 1, view.width, 1);
     }
 

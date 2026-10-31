@@ -72,7 +72,7 @@ one it keeps the name of its base.
 
 Each colour is an element named after its [builder method](themes.md#a-theme-of-your-own): `background`,
 `foreground`, `selectionBackground`, `searchBackground`, `currentLineBackground`, `bracketMatchBackground`,
-`gutterBackground`, `gutterForeground`, `gutterBorder`, `foldMarkerBackground`, `foldMarkerBorder`,
+`gutterBackground`, `gutterForeground`, `gutterBorder`, `stickyLinesBorder`, `foldMarkerBackground`, `foldMarkerBorder`,
 `indentGuide`, `activeIndentGuide`, `insertedLineBackground`, `insertedTextBackground`, `deletedLineBackground`
 and `deletedTextBackground`.
 

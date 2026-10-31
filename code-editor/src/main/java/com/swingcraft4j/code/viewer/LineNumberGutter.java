@@ -279,6 +279,7 @@ final class LineNumberGutter extends JComponent {
         g.setColor(theme.gutterBorder());
         int bottom = stuck.get(stuck.size() - 1).y() + lineHeight;
         g.fillRect(width - 1, stuck.get(0).y(), 1, bottom - stuck.get(0).y());
+        g.setColor(theme.stickyLinesBorder());
         g.fillRect(0, bottom - 1, width, 1);
     }
 

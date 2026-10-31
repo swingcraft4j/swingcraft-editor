@@ -98,6 +98,7 @@ public final class EditorConfig {
         COLORS.put("gutterBackground", CodeTheme.Builder::gutterBackground);
         COLORS.put("gutterForeground", CodeTheme.Builder::gutterForeground);
         COLORS.put("gutterBorder", CodeTheme.Builder::gutterBorder);
+        COLORS.put("stickyLinesBorder", CodeTheme.Builder::stickyLinesBorder);
         COLORS.put("foldMarkerBackground", CodeTheme.Builder::foldMarkerBackground);
         COLORS.put("foldMarkerBorder", CodeTheme.Builder::foldMarkerBorder);
         COLORS.put("indentGuide", CodeTheme.Builder::indentGuide);

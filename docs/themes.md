@@ -87,6 +87,7 @@ CodeTheme theme = CodeTheme.builder()
 | `gutterBackground(Color)`              | The gutter                                              |
 | `gutterForeground(Color)`              | The line numbers, the fold arrows and the dots of a fold mark |
 | `gutterBorder(Color)`                  | The line between the gutter and the text                |
+| `stickyLinesBorder(Color)`             | The line under the [sticky lines](viewer.md#sticky-lines); that of `gutterBorder` unless set |
 | `foldMarkerBackground(Color)`          | The `...` mark that stands for a collapsed fold         |
 | `foldMarkerBorder(Color)`              | The line around that mark                               |
 | `indentGuide(Color)`                   | The [indent guides](viewer.md#options)                  |

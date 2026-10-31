@@ -23,6 +23,8 @@ public final class CodeTheme {
     private final Color gutterBackground;
     private final Color gutterForeground;
     private final Color gutterBorder;
+    private final Color stickyLinesBorder;
+    private final Color explicitStickyLinesBorder;
     private final Color foldMarkerBackground;
     private final Color foldMarkerBorder;
     private final Color explicitFoldMarkerBackground;
@@ -51,6 +53,8 @@ public final class CodeTheme {
         gutterBackground = builder.gutterBackground;
         gutterForeground = builder.gutterForeground;
         gutterBorder = builder.gutterBorder;
+        explicitStickyLinesBorder = builder.stickyLinesBorder;
+        stickyLinesBorder = explicitStickyLinesBorder != null ? explicitStickyLinesBorder : gutterBorder;
         // The mark of a collapsed fold, unless a theme sets it, is made from the colours of the
         // text, so that it shows whatever the colours of the gutter are.
         explicitFoldMarkerBackground = builder.foldMarkerBackground;
@@ -233,6 +237,11 @@ public final class CodeTheme {
         return gutterBorder;
     }
 
+    /** The line under the sticky lines. */
+    public Color stickyLinesBorder() {
+        return stickyLinesBorder;
+    }
+
     /** Background of the mark that stands for the hidden lines of a collapsed fold. */
     public Color foldMarkerBackground() {
         return foldMarkerBackground;
@@ -302,6 +311,7 @@ public final class CodeTheme {
                 .gutterBackground(gutterBackground)
                 .gutterForeground(gutterForeground)
                 .gutterBorder(gutterBorder)
+                .stickyLinesBorder(explicitStickyLinesBorder)
                 .foldMarkerBackground(explicitFoldMarkerBackground)
                 .foldMarkerBorder(explicitFoldMarkerBorder)
                 .indentGuide(explicitIndentGuide)
@@ -329,6 +339,7 @@ public final class CodeTheme {
         private Color gutterBackground = Color.WHITE;
         private Color gutterForeground = Color.GRAY;
         private Color gutterBorder = Color.LIGHT_GRAY;
+        private Color stickyLinesBorder;
         private Color foldMarkerBackground;
         private Color foldMarkerBorder;
         private Color indentGuide;
@@ -387,6 +398,12 @@ public final class CodeTheme {
 
         public Builder gutterBorder(Color color) {
             gutterBorder = color;
+            return this;
+        }
+
+        /** Sets the line under the sticky lines; null goes back to the colour of the gutter border. */
+        public Builder stickyLinesBorder(Color color) {
+            stickyLinesBorder = color;
             return this;
         }
 

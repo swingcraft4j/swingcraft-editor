@@ -4,7 +4,9 @@ import com.swingcraft4j.code.marker.Marker;
 import org.junit.jupiter.api.Test;
 
 import javax.swing.JScrollPane;
+import javax.swing.JViewport;
 import javax.swing.SwingUtilities;
+import java.awt.Color;
 import java.awt.Graphics2D;
 import java.awt.Point;
 import java.awt.event.InputEvent;
@@ -246,6 +248,22 @@ class JCodeViewerTest {
         int border = sticky.getTheme().gutterBorder().getRGB();
         assertEquals(border, image.getRGB(viewportX + 200, sticky.pane.getViewport().getY() + 2 * rowHeight - 1),
                 "the line under the sticky lines");
+    }
+
+    @Test
+    void theLineUnderStickyLinesHasAColourOfItsOwn() throws Exception {
+        StickyViewer sticky = new StickyViewer();
+        sticky.setTheme(sticky.getTheme().toBuilder().stickyLinesBorder(Color.RED).build());
+        int rowHeight = sticky.getRowHeight();
+        sticky.scrollTo(20 * rowHeight);
+        layOut(sticky.pane);
+        BufferedImage image = new BufferedImage(400, 20 * rowHeight, BufferedImage.TYPE_INT_RGB);
+        Graphics2D g = image.createGraphics();
+        sticky.pane.paint(g);
+        g.dispose();
+        JViewport viewport = sticky.pane.getViewport();
+        assertEquals(Color.RED.getRGB(), image.getRGB(viewport.getX() + 200, viewport.getY() + 2 * rowHeight - 1));
+        assertEquals(sticky.getTheme().gutterBorder(), sticky.getTheme().toBuilder().stickyLinesBorder(null).build().stickyLinesBorder());
     }
 
     /** Lays the scroll pane out, and lets the stripe hear of where its viewport is then. */
