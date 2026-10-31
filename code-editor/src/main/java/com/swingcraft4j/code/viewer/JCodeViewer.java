@@ -11,6 +11,7 @@ import com.swingcraft4j.code.lexer.BracketMatcher;
 import com.swingcraft4j.code.lexer.IncrementalLineStates;
 import com.swingcraft4j.code.lexer.LineStateIndex;
 import com.swingcraft4j.code.lexer.LineStates;
+import com.swingcraft4j.code.lexer.TokenType;
 import com.swingcraft4j.code.marker.Marker;
 import com.swingcraft4j.code.marker.MarkerProvider;
 import com.swingcraft4j.code.marker.Severity;
@@ -486,6 +487,25 @@ public class JCodeViewer extends JComponent implements Scrollable {
         applyFolds();
         relayout(anchorLine, true);
         gutter.revalidate();
+    }
+
+    /**
+     * The type of the token that the char at an offset is part of, or null where that is not
+     * known: without a language, past the text, or on a line too long to be highlighted.
+     */
+    public TokenType tokenTypeAt(int offset) {
+        if (lexer == null || offset < 0 || offset >= model.length()) {
+            return null;
+        }
+        int line = model.lineOfOffset(offset);
+        int start = model.lineStart(line);
+        int length = model.lineLength(line);
+        if (length > MAX_HIGHLIGHT_LINE || offset >= start + length) {
+            return null;
+        }
+        TokenBuffer found = new TokenBuffer();
+        lexer.tokenize(readChars(start, start + length), 0, length, lineStates.startState(line), found);
+        return found.typeAt(offset - start);
     }
 
     public int getTabSize() {

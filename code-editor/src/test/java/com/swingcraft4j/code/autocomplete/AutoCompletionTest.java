@@ -2,7 +2,9 @@ package com.swingcraft4j.code.autocomplete;
 
 import com.swingcraft4j.code.editor.JCodeEditor;
 import com.swingcraft4j.code.lexer.Language;
+import com.swingcraft4j.code.lexer.Languages;
 import com.swingcraft4j.code.lexer.RuleLanguage;
+import com.swingcraft4j.code.lexer.TokenType;
 import com.swingcraft4j.code.text.GapTextModel;
 import org.junit.jupiter.api.Test;
 
@@ -12,6 +14,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Predicate;
 
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -28,6 +31,8 @@ class AutoCompletionTest {
             .build();
     private static final Language SQL = RuleLanguage.builder("mini-sql", "Mini SQL")
             .ignoreCase().keywords("select", "set", "from").build();
+    private static final Language QUOTED = RuleLanguage.builder("quoted", "Quoted")
+            .string("\"").lineComment("//").blockComment("/*", "*/").build();
 
     private final JCodeEditor editor = new JCodeEditor();
     private final AutoCompletion completion = AutoCompletion.install(editor);
@@ -256,5 +261,122 @@ class AutoCompletionTest {
         typed.type('{');
         assertEquals("{{}}", typed.getText());
         assertEquals(List.of("{", "{{"), asked);
+    }
+
+    /** An editor to type into, with a provider that tells what it was asked and offers nothing. */
+    private static final class Typing extends JCodeEditor {
+        final List<String> asked = new ArrayList<>();
+        final AutoCompletion completion = new AutoCompletion(this);
+
+        Typing(Predicate<CompletionRequest> exclusive) {
+            setDocument(new GapTextModel(""), QUOTED);
+            completion.addProvider(new CompletionProvider() {
+                @Override
+                public List<Completion> complete(CompletionRequest request) {
+                    asked.add(request.lineBefore());
+                    return List.of();
+                }
+
+                @Override
+                public String triggerCharacters() {
+                    return ".{";
+                }
+
+                @Override
+                public boolean isExclusive(CompletionRequest request) {
+                    return exclusive.test(request);
+                }
+            });
+        }
+
+        void type(String text) {
+            for (char c : text.toCharArray()) {
+                processKeyEvent(new KeyEvent(this, KeyEvent.KEY_TYPED, 0, 0, KeyEvent.VK_UNDEFINED, c));
+            }
+        }
+    }
+
+    @Test
+    void doesNotOpenByItselfInAStringOrAComment() {
+        for (String text : List.of("\"hello System.out", "// see System.out", "/* see System.out", "/** see System.out")) {
+            Typing typing = new Typing(request -> false);
+            typing.type(text);
+            assertEquals(List.of(), typing.asked, text);
+        }
+    }
+
+    @Test
+    void doesNotOpenInAStringOfJava() {
+        Typing typing = new Typing(request -> false);
+        typing.setDocument(new GapTextModel(""), Languages.byId("java").orElseThrow());
+        typing.type("\"hello System.out");
+        assertEquals("\"hello System.out\"", typing.getText());
+        assertEquals(List.of(), typing.asked);
+    }
+
+    @Test
+    void opensAgainOutOfTheString() {
+        Typing typing = new Typing(request -> false);
+        typing.type("\"ab\"");
+        assertEquals(List.of(), typing.asked);
+        typing.type(".");
+        assertEquals(List.of("\"ab\"."), typing.asked, "the dot after the closing quote is outside the string");
+        typing.asked.clear();
+        typing.type(" le");
+        assertEquals(List.of("\"ab\". le"), typing.asked);
+    }
+
+    @Test
+    void ctrlSpaceOpensItInAString() {
+        Typing typing = new Typing(request -> false);
+        typing.type("\"ab");
+        typing.completion.showCompletions();
+        assertEquals(List.of("\"ab"), typing.asked);
+    }
+
+    @Test
+    void theOptionsLetItOpenInStringsOrInComments() {
+        Typing typing = new Typing(request -> false);
+        typing.completion.setAutoActivationInStrings(true);
+        typing.type("\"ab");
+        assertEquals(List.of("\"ab"), typing.asked);
+
+        typing = new Typing(request -> false);
+        typing.completion.setAutoActivationInComments(true);
+        typing.type("// ab");
+        assertEquals(List.of("// ab"), typing.asked);
+    }
+
+    @Test
+    void aProviderThatClaimsTheRequestOpensItInAString() {
+        Typing typing = new Typing(request -> request.lineBefore().endsWith("{{"));
+        typing.type("\"a{");
+        assertEquals(List.of(), typing.asked);
+        typing.type("{");
+        assertEquals(List.of("\"a{{"), typing.asked);
+    }
+
+    @Test
+    void withoutALanguageOrInCodeNothingChanges() {
+        Typing typing = new Typing(request -> false);
+        typing.type("ab");
+        assertEquals(List.of("ab"), typing.asked);
+        typing.asked.clear();
+        typing.setDocument(new GapTextModel(""), null);
+        typing.type("\"cd");
+        assertEquals(List.of("\"cd"), typing.asked, "no language tells that this is a string");
+    }
+
+    @Test
+    void tellsTheTypeOfATokenAtAnOffset() {
+        open("a \"b\" // c\nx", QUOTED);
+        assertEquals(TokenType.STRING, editor.tokenTypeAt(2));
+        assertEquals(TokenType.STRING, editor.tokenTypeAt(4));
+        assertEquals(TokenType.COMMENT, editor.tokenTypeAt(9));
+        assertEquals(null, editor.tokenTypeAt(10), "the end of a line is no char");
+        assertEquals(null, editor.tokenTypeAt(-1));
+        assertEquals(null, editor.tokenTypeAt(100));
+        open("\"b\"", null);
+        assertEquals(null, editor.tokenTypeAt(1), "no language");
     }
 }
