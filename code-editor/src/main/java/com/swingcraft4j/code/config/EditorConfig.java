@@ -67,6 +67,7 @@ public final class EditorConfig {
     static {
         number("tabSize", 1, JCodeViewer::setTabSize);
         flag("lineNumbersVisible", JCodeViewer::setLineNumbersVisible);
+        flag("gutterBorderVisible", JCodeViewer::setGutterBorderVisible);
         flag("lineWrap", JCodeViewer::setLineWrap);
         flag("wrapStyleWord", JCodeViewer::setWrapStyleWord);
         flag("roundedSelection", JCodeViewer::setRoundedSelection);

@@ -100,6 +100,7 @@ applied in the order of this table, whatever the order in the file.
 | `font`                 | see below      | both   | The font of the text                                         |
 | `tabSize`              | 1 or more      | both   | The width of a tab                                           |
 | `lineNumbersVisible`   | `true`/`false` | both   | The line numbers in the gutter                               |
+| `gutterBorderVisible`  | `true`/`false` | both   | The line between the gutter and the text                     |
 | `lineWrap`             | `true`/`false` | both   | Lines wrapped at the width of the view                       |
 | `wrapStyleWord`        | `true`/`false` | both   | Wrapped lines broken at words                                |
 | `roundedSelection`     | `true`/`false` | both   | The selection drawn with rounded corners                     |

@@ -251,6 +251,34 @@ class JCodeViewerTest {
     }
 
     @Test
+    void theGutterBorderCanBeHidden() throws Exception {
+        StickyViewer sticky = new StickyViewer();
+        sticky.setTheme(sticky.getTheme().toBuilder().gutterBorder(Color.RED).gutterBackground(Color.BLUE).build());
+        layOut(sticky.pane);
+        sticky.pane.getRowHeader().doLayout();
+        JViewport viewport = sticky.pane.getViewport();
+        int x = viewport.getX() - 1;
+        assertEquals(Color.RED.getRGB(), paintedAt(sticky, x, viewport.getY() + 5));
+
+        sticky.setGutterBorderVisible(false);
+        assertEquals(Color.BLUE.getRGB(), paintedAt(sticky, x, viewport.getY() + 5));
+
+        // the line under the sticky lines stays
+        int rowHeight = sticky.getRowHeight();
+        sticky.scrollTo(20 * rowHeight);
+        layOut(sticky.pane);
+        assertEquals(Color.RED.getRGB(), paintedAt(sticky, viewport.getX() + 200, viewport.getY() + 2 * rowHeight - 1));
+    }
+
+    private static int paintedAt(StickyViewer sticky, int x, int y) {
+        BufferedImage image = new BufferedImage(400, 20 * sticky.getRowHeight(), BufferedImage.TYPE_INT_RGB);
+        Graphics2D g = image.createGraphics();
+        sticky.pane.paint(g);
+        g.dispose();
+        return image.getRGB(x, y);
+    }
+
+    @Test
     void theLineUnderStickyLinesHasAColourOfItsOwn() throws Exception {
         StickyViewer sticky = new StickyViewer();
         sticky.setTheme(sticky.getTheme().toBuilder().stickyLinesBorder(Color.RED).build());

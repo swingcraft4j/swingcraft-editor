@@ -194,8 +194,10 @@ final class LineNumberGutter extends JComponent {
             int width = getWidth();
             g.setColor(theme.gutterBackground());
             g.fillRect(clip.x, clip.y, clip.width, clip.height);
-            g.setColor(theme.gutterBorder());
-            g.fillRect(width - 1, clip.y, 1, clip.height);
+            if (viewer.isGutterBorderVisible()) {
+                g.setColor(theme.gutterBorder());
+                g.fillRect(width - 1, clip.y, 1, clip.height);
+            }
 
             viewer.applyTextHints(g);
             g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
@@ -276,9 +278,11 @@ final class LineNumberGutter extends JComponent {
             String number = Integer.toString(line + 1);
             g.drawString(number, (float) (numbersEnd - number.length() * cellWidth), y + viewer.baseline());
         }
-        g.setColor(theme.gutterBorder());
         int bottom = stuck.get(stuck.size() - 1).y() + lineHeight;
-        g.fillRect(width - 1, stuck.get(0).y(), 1, bottom - stuck.get(0).y());
+        if (viewer.isGutterBorderVisible()) {
+            g.setColor(theme.gutterBorder());
+            g.fillRect(width - 1, stuck.get(0).y(), 1, bottom - stuck.get(0).y());
+        }
         g.setColor(theme.stickyLinesBorder());
         g.fillRect(0, bottom - 1, width, 1);
     }

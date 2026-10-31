@@ -191,6 +191,7 @@ public class JCodeViewer extends JComponent implements Scrollable {
 
     private boolean foldingEnabled = true;
     private boolean indentGuides = true;
+    private boolean gutterBorderVisible = true;
     /** The line that starts the block the caret is in, whose indent guide stands out, or -1. */
     private int activeGuideLine = -1;
     /** The collapsed folds: the line each one starts at, mapped to its last hidden line. */
@@ -1150,6 +1151,17 @@ public class JCodeViewer extends JComponent implements Scrollable {
     public void setMarkerDots(boolean markerDots) {
         this.markerDots = markerDots;
         gutter.revalidate();
+        gutter.repaint();
+    }
+
+    /** Whether there is a line between the gutter and the text; on by default. */
+    public boolean isGutterBorderVisible() {
+        return gutterBorderVisible;
+    }
+
+    /** Sets whether there is a line between the gutter and the text. The line under the sticky lines stays. */
+    public void setGutterBorderVisible(boolean visible) {
+        gutterBorderVisible = visible;
         gutter.repaint();
     }
 

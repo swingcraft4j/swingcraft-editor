@@ -67,6 +67,7 @@ An edit in an editor is not another model; for edits, see [Listen to edits](edit
 | `setLineWrap(boolean)`           | `false` | Wraps lines at the width of the view instead of scrolling sideways |
 | `setWrapStyleWord(boolean)`      | `false` | Wraps after the last blank that fits, not after the last char      |
 | `setLineNumbersVisible(boolean)` | `true`  | Shows the gutter with the line numbers                             |
+| `setGutterBorderVisible(boolean)` | `true` | Shows the line between the gutter and the text                     |
 | `setFoldingEnabled(boolean)`     | `true`  | Shows the fold arrows in the gutter                                |
 | `setBracketMatching(boolean)`    | `true`  | Highlights the bracket at the caret and its partner                |
 | `setMarkerDots(boolean)`         | `true`  | Puts a dot in the gutter on a line with a [marker](markers.md)     |
