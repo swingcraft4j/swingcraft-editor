@@ -173,7 +173,11 @@ final class MarkdownViews {
         @Override
         public void paint(Graphics g, Shape allocation) {
             if (getContainer() instanceof JMarkdownPreview preview) {
-                fill(g, allocation.getBounds(), preview.codeBackground, LINE_ARC);
+                // a pixel less at the top: the lines have no space between them, and the code of two lines touched
+                Rectangle bounds = allocation.getBounds();
+                bounds.y += 1;
+                bounds.height -= 1;
+                fill(g, bounds, preview.codeBackground, LINE_ARC);
             }
             super.paint(g, inner(allocation));
         }
