@@ -1,6 +1,7 @@
 package com.swingcraft4j.code.autocomplete;
 
 import com.swingcraft4j.code.editor.JCodeEditor;
+import com.swingcraft4j.code.lexer.TokenType;
 import com.swingcraft4j.code.text.ArrayTextModel;
 import com.swingcraft4j.code.text.TextModel;
 import com.swingcraft4j.code.viewer.JCodeViewer;
@@ -98,6 +99,8 @@ public final class AutoCompletion {
     private final List<CompletionProvider> asyncProviders = new ArrayList<>();
     private boolean autoActivation = true;
     private int autoActivationLength = 2;
+    private boolean autoActivationInStrings;
+    private boolean autoActivationInComments;
 
     private final DefaultListModel<Suggestion> suggestions = new DefaultListModel<>();
     private final JList<Suggestion> list = new JList<>(suggestions);
@@ -388,6 +391,28 @@ public final class AutoCompletion {
         autoActivationLength = Math.max(1, length);
     }
 
+    public boolean isAutoActivationInStrings() {
+        return autoActivationInStrings;
+    }
+
+    /**
+     * Whether the popup opens by itself inside a string; not by default. Ctrl+Space opens it
+     * there anyway, and so does typing where a provider claims the request with
+     * {@link CompletionProvider#isExclusive}.
+     */
+    public void setAutoActivationInStrings(boolean autoActivationInStrings) {
+        this.autoActivationInStrings = autoActivationInStrings;
+    }
+
+    public boolean isAutoActivationInComments() {
+        return autoActivationInComments;
+    }
+
+    /** Whether the popup opens by itself inside a comment; not by default. As for strings, otherwise. */
+    public void setAutoActivationInComments(boolean autoActivationInComments) {
+        this.autoActivationInComments = autoActivationInComments;
+    }
+
     // ---- Suggestions ----
 
     private CompletionRequest request() {
@@ -595,7 +620,7 @@ public final class AutoCompletion {
         if (accepting || editor.isComposing() || (snippet != null && snippet.isUpdatingLinks())) {
             return;
         }
-        if (triggered && autoActivation) {
+        if (triggered && autoActivation && opensHere()) {
             // a trigger char asks for suggestions before any letter of the word is typed
             explicit = true;
             refresh();
@@ -606,9 +631,22 @@ public final class AutoCompletion {
             } else {
                 hide();
             }
-        } else if (typed && autoActivation && getPrefix().length() >= autoActivationLength) {
+        } else if (typed && autoActivation && getPrefix().length() >= autoActivationLength && opensHere()) {
             refresh();
         }
+    }
+
+    /** Whether the popup may open by itself for what was just typed before the caret. */
+    private boolean opensHere() {
+        TokenType type = editor.tokenTypeAt(editor.getCaretPosition() - 1);
+        boolean allowed = type == TokenType.STRING ? autoActivationInStrings
+                : type == TokenType.COMMENT || type == TokenType.DOC_COMMENT ? autoActivationInComments : true;
+        if (allowed) {
+            return true;
+        }
+        CompletionRequest request = request();
+        return providers.stream().anyMatch(provider -> provider.isExclusive(request))
+                || asyncProviders.stream().anyMatch(provider -> provider.isExclusive(request));
     }
 
     private boolean isTrigger(char c) {

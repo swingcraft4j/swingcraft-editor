@@ -162,6 +162,11 @@ Such a provider must not read `request.model()`. The rest of the request is a sn
 |----------------------------------|---------|-----------------------------------------------------------|
 | `setAutoActivation(boolean)`     | `true`  | Opens the popup while typing; else only on Ctrl+Space     |
 | `setAutoActivationLength(int)`   | `2`     | How many chars of a word are typed before the popup opens |
+| `setAutoActivationInStrings(boolean)` | `false` | Opens the popup while typing inside a string as well |
+| `setAutoActivationInComments(boolean)` | `false` | Opens the popup while typing inside a comment as well |
+
+Inside a string or a comment, Ctrl+Space still opens the popup, and so does typing where a provider claims
+the request with [`isExclusive`](#only-your-suggestions), as for a `{{variable}}` in a string.
 
 `showCompletions()` opens the popup and `hide()` closes it. `isShowing()` tells whether it is open.
 
