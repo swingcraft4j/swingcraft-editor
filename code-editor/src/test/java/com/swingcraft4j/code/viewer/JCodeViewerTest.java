@@ -188,6 +188,7 @@ class JCodeViewerTest {
         StickyViewer sticky = new StickyViewer();
         int rowHeight = sticky.getRowHeight();
         sticky.collapseFold(1);
+        layOut(sticky.pane); // the layout that is pending would otherwise move the view while it is being looked at
         // lines 2 to 41 are hidden, and the closing brace of the method follows the line starting it
         sticky.scrollTo(3);
         assertEquals(List.of(0, 1), sticky.stuckLines());
