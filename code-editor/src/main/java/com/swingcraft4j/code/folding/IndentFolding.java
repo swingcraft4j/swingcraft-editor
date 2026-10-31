@@ -129,10 +129,21 @@ public final class IndentFolding {
         for (int previous = line - 1; previous >= Math.max(0, line - MAX_BLANK_LINES); previous--) {
             int other = indent(model, previous, tabSize);
             if (other >= 0) {
-                return other == indent ? previous : line;
+                return other == indent && canNameBlock(model, previous) ? previous : line;
             }
         }
         return line;
+    }
+
+    /** Whether a line is not complete in itself: one ending in a bracket or a separator, as the end of the object before in a list, names nothing after it. */
+    private static boolean canNameBlock(TextModel model, int line) {
+        for (int i = model.lineEnd(line) - 1; i >= model.lineStart(line); i--) {
+            char c = model.charAt(i);
+            if (c != ' ' && c != '\t' && c != '\r') {
+                return ",;{}[]".indexOf(c) < 0;
+            }
+        }
+        return false;
     }
 
     private static boolean isOnlyOpeningBrace(TextModel model, int line) {

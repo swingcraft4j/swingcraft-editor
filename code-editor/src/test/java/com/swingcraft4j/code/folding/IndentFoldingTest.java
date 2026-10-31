@@ -89,6 +89,29 @@ class IndentFoldingTest {
     }
 
     @Test
+    void anOpeningBraceAfterTheEndOfABlockNamesItself() {
+        TextModel json = ArrayTextModel.of(String.join("\n",
+                "[",                // 0
+                "  {",              // 1
+                "    \"a\": 1",     // 2
+                "  },",             // 3
+                "  {",              // 4
+                "    \"a\": 2",     // 5
+                "  }",              // 6
+                "  {",              // 7
+                "    \"a\": 3",     // 8
+                "  }",              // 9
+                "]"));              // 10
+        assertEquals(1, IndentFolding.foldHeader(json, 1, 2), "the line before is deeper out");
+        assertEquals(4, IndentFolding.foldHeader(json, 4, 2), "not the end of the object before");
+        assertEquals(7, IndentFolding.foldHeader(json, 7, 2), "nor without the comma");
+
+        TextModel code = ArrayTextModel.of("a();\n{\n    b();\n}\nelse\n{\n    c();\n}");
+        assertEquals(1, IndentFolding.foldHeader(code, 1, 4), "a statement that has ended names nothing");
+        assertEquals(4, IndentFolding.foldHeader(code, 5, 4), "else does");
+    }
+
+    @Test
     void hiddenLinesTakeNoRows() {
         RowIndex rows = new RowIndex(model, 4);
         BitSet hidden = new BitSet();
