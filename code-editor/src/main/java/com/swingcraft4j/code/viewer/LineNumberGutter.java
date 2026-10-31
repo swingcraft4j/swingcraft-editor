@@ -20,6 +20,7 @@ import java.awt.Rectangle;
 import java.awt.RenderingHints;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.util.List;
 import java.awt.geom.Path2D;
 
 /**
@@ -48,6 +49,12 @@ final class LineNumberGutter extends JComponent {
         MouseAdapter mouse = new MouseAdapter() {
             @Override
             public void mousePressed(MouseEvent e) {
+                int sticky = viewer.stickyLineAt(e.getY());
+                if (sticky >= 0) {
+                    viewer.goToStickyLine(sticky);
+                    viewer.requestFocusInWindow();
+                    return;
+                }
                 Marker marker = dotMarkerAt(e);
                 int line = foldableLineAt(e);
                 if (marker != null) {
@@ -66,11 +73,14 @@ final class LineNumberGutter extends JComponent {
             @Override
             public void mouseExited(MouseEvent e) {
                 setHovered(false);
+                viewer.setStickyHoverLine(-1);
             }
 
             @Override
             public void mouseMoved(MouseEvent e) {
-                boolean clickable = dotMarkerAt(e) != null || foldableLineAt(e) >= 0;
+                int sticky = viewer.stickyLineAt(e.getY());
+                viewer.setStickyHoverLine(sticky);
+                boolean clickable = sticky >= 0 || dotMarkerAt(e) != null || foldableLineAt(e) >= 0;
                 setCursor(clickable ? Cursor.getPredefinedCursor(Cursor.HAND_CURSOR) : null);
             }
         };
@@ -244,9 +254,32 @@ final class LineNumberGutter extends JComponent {
                     g.setComposite(opaque);
                 }
             }
+            paintStickyLines(g, theme, lineHeight, numbersEnd, cellWidth);
         } finally {
             g.dispose();
         }
+    }
+
+    /** Paints the numbers of the sticky lines over the others, beside where the viewer paints their text. */
+    private void paintStickyLines(Graphics2D g, CodeTheme theme, int lineHeight, double numbersEnd, double cellWidth) {
+        List<StickyLines.Stuck> stuck = viewer.stickyLayout();
+        if (stuck.isEmpty()) {
+            return;
+        }
+        int width = getWidth();
+        for (int i = stuck.size() - 1; i >= 0; i--) {
+            int line = stuck.get(i).line();
+            int y = stuck.get(i).y();
+            g.setColor(line == viewer.stickyHoverLine() ? theme.foldMarkerBackground() : theme.gutterBackground());
+            g.fillRect(0, y, width, lineHeight);
+            g.setColor(theme.gutterForeground());
+            String number = Integer.toString(line + 1);
+            g.drawString(number, (float) (numbersEnd - number.length() * cellWidth), y + viewer.baseline());
+        }
+        g.setColor(theme.gutterBorder());
+        int bottom = stuck.get(stuck.size() - 1).y() + lineHeight;
+        g.fillRect(width - 1, stuck.get(0).y(), 1, bottom - stuck.get(0).y());
+        g.fillRect(0, bottom - 1, width, 1);
     }
 
     /** A chevron pointing down for an open fold and to the right for a collapsed one. */

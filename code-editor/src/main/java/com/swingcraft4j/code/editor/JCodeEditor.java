@@ -104,6 +104,7 @@ public class JCodeEditor extends JCodeViewer {
 
     public JCodeEditor() {
         setDocument(new GapTextModel(), null);
+        setStickyLinesVisible(true);
         enableInputMethods(true);
         addInputMethodListener(composition);
         addMouseListener(new MouseAdapter() {

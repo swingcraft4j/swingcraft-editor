@@ -190,6 +190,20 @@ viewer.showGoToLineDialog(); // asks for the line
 
 Lines are counted from zero in the methods, so line 120 of the gutter is `119`.
 
+## Sticky lines
+
+The lines starting the blocks around the text in view, as a class and a method, stay at the top of the scroll
+pane. A click on one puts the caret on it and scrolls to it. They are on in a `JCodeEditor` and off in a
+`JCodeViewer`, and need a scroll pane:
+
+```java
+viewer.setStickyLinesVisible(true);
+viewer.setStickyLinesMaxCount(3); // 5 unless set, and never more than a third of the view
+```
+
+The blocks are found from indentation, as folds are, so a line at the margin in the middle of a block, as a
+`#ifdef`, ends it. While sticky lines are on, the viewports repaint all they show on each scroll.
+
 ## Folding
 
 A line is foldable when the lines after it are indented more. A click on the arrow in the gutter collapses it.

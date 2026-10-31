@@ -94,6 +94,7 @@ final class DemoMenus {
         view.addSeparator();
         view.add(option("Line Numbers", viewer.isLineNumbersVisible(), viewer::setLineNumbersVisible));
         view.add(option("Fold Arrows", viewer.isFoldingEnabled(), viewer::setFoldingEnabled));
+        view.add(option("Sticky Lines", viewer.isStickyLinesVisible(), viewer::setStickyLinesVisible));
         view.add(option("Indent Guides", viewer.isIndentGuides(), viewer::setIndentGuides));
         view.add(option("Bracket Matching", viewer.isBracketMatching(), viewer::setBracketMatching));
         view.add(option("Rounded Selection", viewer.isRoundedSelection(), viewer::setRoundedSelection));

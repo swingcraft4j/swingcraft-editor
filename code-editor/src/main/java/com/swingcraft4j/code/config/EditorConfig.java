@@ -75,6 +75,8 @@ public final class EditorConfig {
         flag("bracketMatching", JCodeViewer::setBracketMatching);
         flag("indentGuides", JCodeViewer::setIndentGuides);
         flag("foldingEnabled", JCodeViewer::setFoldingEnabled);
+        flag("stickyLinesVisible", JCodeViewer::setStickyLinesVisible);
+        number("stickyLinesMaxCount", 1, JCodeViewer::setStickyLinesMaxCount);
         flag("markerDots", JCodeViewer::setMarkerDots);
         flag("markerStripe", JCodeViewer::setMarkerStripe);
         number("markerStripeWidth", 6, JCodeViewer::setMarkerStripeWidth);

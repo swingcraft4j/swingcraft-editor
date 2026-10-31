@@ -108,6 +108,8 @@ applied in the order of this table, whatever the order in the file.
 | `bracketMatching`      | `true`/`false` | both   | The bracket at the caret and its partner marked              |
 | `indentGuides`         | `true`/`false` | both   | The indent guides                                            |
 | `foldingEnabled`       | `true`/`false` | both   | [Folding](viewer.md#folding)                                 |
+| `stickyLinesVisible`   | `true`/`false` | both   | [Sticky lines](viewer.md#sticky-lines)                       |
+| `stickyLinesMaxCount`  | 1 or more      | both   | How many sticky lines there are at most                      |
 | `markerDots`           | `true`/`false` | both   | A dot in the gutter for a line with a [marker](markers.md)   |
 | `markerStripe`         | `true`/`false` | both   | The stripe of markers at the right                           |
 | `markerStripeWidth`    | 6 or more      | both   | The width of that stripe                                     |

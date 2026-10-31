@@ -5,7 +5,12 @@ import org.junit.jupiter.api.Test;
 
 import javax.swing.JScrollPane;
 import javax.swing.SwingUtilities;
+import java.awt.Graphics2D;
+import java.awt.Point;
+import java.awt.event.InputEvent;
 import java.awt.event.MouseEvent;
+import java.awt.event.MouseListener;
+import java.awt.image.BufferedImage;
 import java.util.Arrays;
 import java.util.List;
 
@@ -88,6 +93,158 @@ class JCodeViewerTest {
         assertEquals(1, told[0], "the same markers again are no news");
         viewer.setMarkers(List.of());
         assertEquals(2, told[0]);
+    }
+
+    /** A class with a method of forty lines and one more method; each line is one row. */
+    private static String stickyCode() {
+        StringBuilder code = new StringBuilder("class A {\n    void one() {\n"); // lines 0 and 1
+        for (int i = 0; i < 40; i++) {
+            code.append("        call();\n"); // lines 2 to 41
+        }
+        code.append("    }\n\n    void two() {\n"); // lines 42 to 44
+        for (int i = 0; i < 40; i++) {
+            code.append("        call();\n"); // so that the view can go well past the first method
+        }
+        return code.append("    }\n}\n").toString();
+    }
+
+    /** A viewer in a scroll pane twenty rows high, which can move its caret into view. */
+    private static final class StickyViewer extends JCodeViewer {
+        final JScrollPane pane = new JScrollPane(this);
+
+        StickyViewer() throws Exception {
+            setText(stickyCode());
+            setStickyLinesVisible(true);
+            pane.setSize(400, 20 * getRowHeight() + pane.getInsets().top + pane.getInsets().bottom);
+            pane.addNotify();
+            layOut(pane);
+        }
+
+        void scrollTo(int y) {
+            pane.getViewport().setViewPosition(new Point(0, y));
+        }
+
+        int viewY() {
+            return pane.getViewport().getViewPosition().y;
+        }
+
+        List<Integer> stuckLines() {
+            return stickyLayout().stream().map(StickyLines.Stuck::line).toList();
+        }
+
+        void caretTo(int line) {
+            select(getModel().lineStart(line), getModel().lineStart(line));
+            scrollCaretIntoView();
+        }
+    }
+
+    @Test
+    void stickyLinesAreTheBlocksAroundTheTextInView() throws Exception {
+        StickyViewer sticky = new StickyViewer();
+        int rowHeight = sticky.getRowHeight();
+        assertEquals(List.of(), sticky.stuckLines(), "at the top of the text everything is in place");
+
+        sticky.scrollTo(3);
+        assertEquals(List.of(0, 1), sticky.stuckLines(), "each line stays as soon as it starts to leave its place");
+        sticky.scrollTo(10 * rowHeight);
+        assertEquals(List.of(0, 1), sticky.stuckLines());
+        assertEquals(10 * rowHeight, sticky.stickyLayout().get(0).y());
+        assertEquals(11 * rowHeight, sticky.stickyLayout().get(1).y());
+        assertEquals(1, sticky.stickyLineAt(11 * rowHeight + 1));
+        assertEquals(-1, sticky.stickyLineAt(12 * rowHeight));
+    }
+
+    @Test
+    void aStickyLineIsPushedUpByTheEndOfItsBlock() throws Exception {
+        StickyViewer sticky = new StickyViewer();
+        int rowHeight = sticky.getRowHeight();
+        // the last line of the first method, 41, is right below the two sticky lines
+        sticky.scrollTo(39 * rowHeight);
+        assertEquals(List.of(0, 1), sticky.stuckLines());
+        assertEquals(40 * rowHeight, sticky.stickyLayout().get(1).y());
+
+        sticky.scrollTo(40 * rowHeight + 5);
+        assertEquals(41 * rowHeight, sticky.stickyLayout().get(1).y(), "goes up with the text");
+        assertEquals(40 * rowHeight + 5, sticky.stickyLayout().get(0).y());
+
+        sticky.scrollTo(41 * rowHeight);
+        assertEquals(List.of(0), sticky.stuckLines(), "gone behind the line above it");
+    }
+
+    @Test
+    void stickyLinesKeepToTheirLimits() throws Exception {
+        StickyViewer sticky = new StickyViewer();
+        sticky.setStickyLinesMaxCount(1);
+        sticky.scrollTo(10 * sticky.getRowHeight());
+        assertEquals(List.of(1), sticky.stuckLines(), "the closest block stays when not all fit");
+
+        sticky.setStickyLinesMaxCount(5);
+        sticky.setStickyLinesVisible(false);
+        assertEquals(List.of(), sticky.stuckLines());
+    }
+
+    @Test
+    void stickyLinesLeaveCollapsedTextOut() throws Exception {
+        StickyViewer sticky = new StickyViewer();
+        int rowHeight = sticky.getRowHeight();
+        sticky.collapseFold(1);
+        // lines 2 to 41 are hidden, and the closing brace of the method follows the line starting it
+        sticky.scrollTo(3);
+        assertEquals(List.of(0, 1), sticky.stuckLines());
+        assertEquals(rowHeight, sticky.stickyLayout().get(1).y(), "its block ends with it, so it stays where it is");
+        sticky.scrollTo(rowHeight + 3);
+        assertEquals(List.of(0), sticky.stuckLines());
+    }
+
+    @Test
+    void aClickOnAStickyLineGoesToIt() throws Exception {
+        StickyViewer sticky = new StickyViewer();
+        int rowHeight = sticky.getRowHeight();
+        sticky.scrollTo(20 * rowHeight);
+        assertEquals(1, sticky.stickyLineAt(21 * rowHeight));
+        MouseEvent press = new MouseEvent(sticky, MouseEvent.MOUSE_PRESSED, 0, InputEvent.BUTTON1_DOWN_MASK,
+                200, 21 * rowHeight, 200, 21 * rowHeight, 1, false, MouseEvent.BUTTON1);
+        for (MouseListener listener : sticky.getMouseListeners()) {
+            listener.mousePressed(press);
+        }
+        assertEquals(sticky.getModel().lineStart(1) + 4, sticky.getCaretPosition(), "at the start of the text of the line");
+        assertEquals(0, sticky.viewY(), "right below the line stuck above it, which is here the first line");
+    }
+
+    @Test
+    void scrollingToALineLeavesItBelowTheStickyLines() throws Exception {
+        StickyViewer sticky = new StickyViewer();
+        int rowHeight = sticky.getRowHeight();
+        sticky.scrollToLine(30);
+        assertEquals(28 * rowHeight, sticky.viewY(), "with the class and the method above it");
+        assertEquals(List.of(0, 1), sticky.stuckLines());
+    }
+
+    @Test
+    void theCaretStaysClearOfTheStickyLines() throws Exception {
+        StickyViewer sticky = new StickyViewer();
+        int rowHeight = sticky.getRowHeight();
+        sticky.scrollTo(20 * rowHeight);
+        sticky.caretTo(21); // behind the second sticky line
+        assertEquals(19 * rowHeight, sticky.viewY());
+        sticky.caretTo(30);
+        assertEquals(19 * rowHeight, sticky.viewY(), "a caret already in the open does not scroll");
+    }
+
+    @Test
+    void paintsStickyLinesOverTheText() throws Exception {
+        StickyViewer sticky = new StickyViewer();
+        int rowHeight = sticky.getRowHeight();
+        sticky.scrollTo(20 * rowHeight);
+        layOut(sticky.pane);
+        BufferedImage image = new BufferedImage(400, 20 * rowHeight, BufferedImage.TYPE_INT_RGB);
+        Graphics2D g = image.createGraphics();
+        sticky.pane.paint(g);
+        g.dispose();
+        int viewportX = sticky.pane.getViewport().getX();
+        int border = sticky.getTheme().gutterBorder().getRGB();
+        assertEquals(border, image.getRGB(viewportX + 200, sticky.pane.getViewport().getY() + 2 * rowHeight - 1),
+                "the line under the sticky lines");
     }
 
     /** Lays the scroll pane out, and lets the stripe hear of where its viewport is then. */

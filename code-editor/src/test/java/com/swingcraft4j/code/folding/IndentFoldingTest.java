@@ -11,6 +11,7 @@ import org.junit.jupiter.api.Test;
 
 import java.util.BitSet;
 
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -54,6 +55,37 @@ class IndentFoldingTest {
         assertEquals(1, IndentFolding.enclosingFoldStart(model, 2, 4));
         assertEquals(2, IndentFolding.enclosingFoldStart(model, 3, 4), "a blank line belongs to what is above it");
         assertEquals(-1, IndentFolding.enclosingFoldStart(model, 0, 4));
+    }
+
+    @Test
+    void findsAllTheRegionsAroundALine() {
+        assertArrayEquals(new int[]{}, IndentFolding.enclosingFoldStarts(model, 0, 4));
+        assertArrayEquals(new int[]{0, 1}, IndentFolding.enclosingFoldStarts(model, 2, 4));
+        assertArrayEquals(new int[]{0, 1, 2}, IndentFolding.enclosingFoldStarts(model, 4, 4));
+        assertArrayEquals(new int[]{0, 1, 2}, IndentFolding.enclosingFoldStarts(model, 3, 4), "a blank line belongs to what follows it");
+        assertArrayEquals(new int[]{0, 1}, IndentFolding.enclosingFoldStarts(model, 5, 4), "a closing brace is outside its block");
+        assertArrayEquals(new int[]{}, IndentFolding.enclosingFoldStarts(model, 8, 4), "before the closing brace of the class");
+        assertArrayEquals(new int[]{}, IndentFolding.enclosingFoldStarts(model, 10, 4), "the blank last line");
+    }
+
+    @Test
+    void anOpeningBraceOnItsOwnLineIsNamedByTheLineBefore() {
+        TextModel code = ArrayTextModel.of(String.join("\n",
+                "class A",          // 0
+                "{",                // 1
+                "    void run()",   // 2
+                "",                 // 3
+                "    {",            // 4
+                "        y();",     // 5
+                "    }",            // 6
+                "}"));              // 7
+        assertArrayEquals(new int[]{1, 4}, IndentFolding.enclosingFoldStarts(code, 5, 4));
+        assertEquals(0, IndentFolding.foldHeader(code, 1, 4));
+        assertEquals(2, IndentFolding.foldHeader(code, 4, 4), "over a blank line");
+        assertEquals(2, IndentFolding.foldHeader(code, 2, 4), "a line with more than the brace names itself");
+
+        TextModel first = ArrayTextModel.of("{\n    x\n}");
+        assertEquals(0, IndentFolding.foldHeader(first, 0, 4), "nothing before it");
     }
 
     @Test

@@ -2,6 +2,8 @@ package com.swingcraft4j.code.folding;
 
 import com.swingcraft4j.code.text.TextModel;
 
+import java.util.Arrays;
+
 /**
  * Finds foldable regions from indentation alone, which works for any language that is
  * indented consistently: a line starts a region when the next non-blank line is indented
@@ -84,5 +86,66 @@ public final class IndentFolding {
             }
         }
         return -1;
+    }
+
+    /**
+     * The lines starting the regions around a line, the outermost first. A blank line counts as
+     * part of what follows it, as {@link #foldEnd} leaves the blank lines at the end of a region out.
+     */
+    public static int[] enclosingFoldStarts(TextModel model, int line, int tabSize) {
+        int limit = indent(model, line, tabSize);
+        int lineCount = model.lineCount();
+        for (int next = line + 1; limit < 0 && next < Math.min(lineCount, line + 1 + MAX_BLANK_LINES); next++) {
+            limit = indent(model, next, tabSize);
+        }
+        int[] found = new int[16];
+        int count = 0;
+        for (int previous = line - 1; limit > 0 && previous >= Math.max(0, line - MAX_LINES_UP); previous--) {
+            int other = indent(model, previous, tabSize);
+            if (other >= 0 && other < limit) {
+                if (count == found.length) {
+                    found = Arrays.copyOf(found, count * 2);
+                }
+                found[count++] = previous;
+                limit = other;
+            }
+        }
+        int[] outermostFirst = new int[count];
+        for (int i = 0; i < count; i++) {
+            outermostFirst[i] = found[count - 1 - i];
+        }
+        return outermostFirst;
+    }
+
+    /**
+     * The line that names a region: the line it starts at, or where that holds only an opening
+     * brace, the line before it at the same indentation, as the signature of a method is.
+     */
+    public static int foldHeader(TextModel model, int line, int tabSize) {
+        int indent = indent(model, line, tabSize);
+        if (indent < 0 || !isOnlyOpeningBrace(model, line)) {
+            return line;
+        }
+        for (int previous = line - 1; previous >= Math.max(0, line - MAX_BLANK_LINES); previous--) {
+            int other = indent(model, previous, tabSize);
+            if (other >= 0) {
+                return other == indent ? previous : line;
+            }
+        }
+        return line;
+    }
+
+    private static boolean isOnlyOpeningBrace(TextModel model, int line) {
+        int end = model.lineEnd(line);
+        int braces = 0;
+        for (int i = model.lineStart(line); i < end; i++) {
+            char c = model.charAt(i);
+            if (c == '{') {
+                braces++;
+            } else if (c != ' ' && c != '\t' && c != '\r') {
+                return false;
+            }
+        }
+        return braces == 1;
     }
 }

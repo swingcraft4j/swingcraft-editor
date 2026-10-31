@@ -195,6 +195,18 @@ public class JCodeViewer extends JComponent implements Scrollable {
     /** The collapsed folds: the line each one starts at, mapped to its last hidden line. */
     private TreeMap<Integer, Integer> collapsedFolds = new TreeMap<>();
 
+    private boolean stickyLinesVisible;
+    private int stickyLinesMaxCount = 5;
+    private final StickyLines stickyLines = new StickyLines(this);
+    /** Whether the scroll mode of the viewports was changed for the sticky lines. */
+    private boolean stickyScrollMode;
+    /** The sticky line under the mouse, or -1. */
+    private int stickyHoverLine = -1;
+    /** Set while a press on a sticky line is held, which must not select anything when dragged. */
+    private boolean stickyPressed;
+    /** Set while a sticky line is painted, which shows the text alone and no selection or marks. */
+    private boolean paintingSticky;
+
     // The part of the line being painted that lies inside the clip.
     /** Counts the changes to the layout, to tell when what is known of a line's rows is out of date. */
     private long layoutVersion;
@@ -724,6 +736,7 @@ public class JCodeViewer extends JComponent implements Scrollable {
         int margin = caret.width * 4;
         int left = Math.max(0, caret.x - margin);
         scrollRectToVisible(new Rectangle(left, caret.y, caret.x + margin - left, caret.height));
+        keepClearOfStickyLines(caret.y);
     }
 
     private int previousOffset(int offset) {
@@ -895,11 +908,12 @@ public class JCodeViewer extends JComponent implements Scrollable {
         }
     }
 
-    /** Scrolls so that the zero-based line is at the top of the view. */
+    /** Scrolls so that the zero-based line is at the top of the view, below any sticky lines. */
     public void scrollToLine(int line) {
         line = Math.max(0, Math.min(line, model.lineCount() - 1));
         int y = scrollY(rows.firstRow(line));
         if (getParent() instanceof JViewport viewport) {
+            y = Math.max(0, y - stickyCountAbove(line, viewport) * lineHeight);
             int maxY = Math.max(0, getHeight() - viewport.getExtentSize().height);
             viewport.setViewPosition(new Point(viewport.getViewPosition().x, Math.min(y, maxY)));
         } else {
@@ -1005,7 +1019,9 @@ public class JCodeViewer extends JComponent implements Scrollable {
             target.y = Math.max(0, Math.min(top, getHeight() - visible.height));
             target.height = visible.height;
         }
+        int y = getOffsetBounds(start).y;
         scrollRectToVisible(target);
+        keepClearOfStickyLines(y);
     }
 
     // ---- Markers ----
@@ -1689,6 +1705,155 @@ public class JCodeViewer extends JComponent implements Scrollable {
         rows.setHiddenLines(hidden);
     }
 
+    // ---- Sticky lines ----
+
+    public boolean isStickyLinesVisible() {
+        return stickyLinesVisible;
+    }
+
+    /**
+     * Sets whether the lines starting the blocks around the text in view stay at the top of the
+     * scroll pane, as the method around a line of its body; a click on one goes to it. Viewports
+     * then repaint all they show on each scroll, as what is at their top does not scroll along.
+     */
+    public void setStickyLinesVisible(boolean visible) {
+        stickyLinesVisible = visible;
+        configureEnclosingScrollPane();
+        repaint();
+        gutter.repaint();
+    }
+
+    public int getStickyLinesMaxCount() {
+        return stickyLinesMaxCount;
+    }
+
+    /** Sets how many sticky lines there are at most; they never take more than a third of the view. */
+    public void setStickyLinesMaxCount(int count) {
+        if (count < 1) {
+            throw new IllegalArgumentException("count must be at least 1: " + count);
+        }
+        stickyLinesMaxCount = count;
+        repaint();
+        gutter.repaint();
+    }
+
+    /** How many sticky lines fit in a viewport. */
+    private int stickyRoom(JViewport viewport) {
+        if (!stickyLinesVisible || lineHeight == 0) {
+            return 0;
+        }
+        return Math.min(stickyLinesMaxCount, viewport.getExtentSize().height / (3 * lineHeight));
+    }
+
+    /** The sticky lines at the current scroll position, the outermost first, which the first of are on top. */
+    List<StickyLines.Stuck> stickyLayout() {
+        if (getParent() instanceof JViewport viewport) {
+            int room = stickyRoom(viewport);
+            if (room > 0) {
+                return stickyLines.layout(viewport.getViewPosition().y, room);
+            }
+        }
+        return List.of();
+    }
+
+    /** The sticky lines of a line, when it is right below them. */
+    private int stickyCountAbove(int line, JViewport viewport) {
+        int room = stickyRoom(viewport);
+        return room > 0 ? stickyLines.countAbove(line, room) : 0;
+    }
+
+    /** The sticky line at a height of the component, or -1. */
+    int stickyLineAt(int y) {
+        for (StickyLines.Stuck stuck : stickyLayout()) {
+            if (y >= stuck.y() && y < stuck.y() + lineHeight) {
+                return stuck.line();
+            }
+        }
+        return -1;
+    }
+
+    int stickyHoverLine() {
+        return stickyHoverLine;
+    }
+
+    /** Marks the sticky line under the mouse, or none with -1. */
+    void setStickyHoverLine(int line) {
+        if (line != stickyHoverLine) {
+            stickyHoverLine = line;
+            repaint();
+            gutter.repaint();
+        }
+    }
+
+    /** Puts the caret at the start of the text of a line and scrolls it to right below the lines stuck above it. */
+    void goToStickyLine(int line) {
+        int offset = model.lineStart(line);
+        int end = model.lineEnd(line);
+        while (offset < end && (model.charAt(offset) == ' ' || model.charAt(offset) == '\t')) {
+            offset++;
+        }
+        select(offset, offset);
+        scrollToLine(line);
+    }
+
+    /** Scrolls up as far as it takes for a row at a height not to lie behind the sticky lines. */
+    private void keepClearOfStickyLines(int y) {
+        if (!stickyLinesVisible || !(getParent() instanceof JViewport viewport)) {
+            return;
+        }
+        Point position = viewport.getViewPosition();
+        int bottom = position.y;
+        for (StickyLines.Stuck stuck : stickyLayout()) {
+            bottom = Math.max(bottom, stuck.y() + lineHeight);
+        }
+        if (y < bottom) {
+            int line = rows.lineAtRow(clampRow(rowAtY(y)));
+            int top = Math.max(0, y - stickyCountAbove(line, viewport) * lineHeight);
+            if (top < position.y) {
+                viewport.setViewPosition(new Point(position.x, top));
+            }
+        }
+    }
+
+    /** Paints the sticky lines over the text, whatever part of the view is being repainted. */
+    private void paintStickyLines(Graphics2D g) {
+        List<StickyLines.Stuck> stuck = stickyLayout();
+        if (stuck.isEmpty() || !(getParent() instanceof JViewport viewport)) {
+            return;
+        }
+        Rectangle view = viewport.getViewRect();
+        // from the last, which goes up behind the one above it as it leaves
+        for (int i = stuck.size() - 1; i >= 0; i--) {
+            int line = stuck.get(i).line();
+            int y = stuck.get(i).y();
+            Graphics2D c = (Graphics2D) g.create();
+            try {
+                c.clipRect(view.x, y, view.width, lineHeight);
+                Rectangle clip = c.getClipBounds();
+                if (clip.isEmpty()) {
+                    continue;
+                }
+                c.setColor(line == stickyHoverLine ? theme.foldMarkerBackground() : theme.background());
+                c.fillRect(clip.x, clip.y, clip.width, clip.height);
+                int row = rows.firstRow(line);
+                c.translate(0, y - rowY(row));
+                clip = c.getClipBounds();
+                spanClipLeft = clip.x;
+                spanClipRight = clip.x + clip.width;
+                paintingSticky = true;
+                paintLine(c, clip, line, row, row, row);
+                if (collapsedFolds.containsKey(line)) {
+                    paintFoldMarker(c, line);
+                }
+            } finally {
+                paintingSticky = false;
+                c.dispose();
+            }
+        }
+        g.setColor(theme.gutterBorder());
+        g.fillRect(view.x, stuck.get(stuck.size() - 1).y() + lineHeight - 1, view.width, 1);
+    }
+
     // ---- Layout ----
 
     private void updateMetrics() {
@@ -1802,7 +1967,7 @@ public class JCodeViewer extends JComponent implements Scrollable {
         return Math.max(MIN_WRAP_CELLS, cells);
     }
 
-    private int clampRow(int row) {
+    int clampRow(int row) {
         return Math.max(0, Math.min(row, rows.rowCount() - 1));
     }
 
@@ -1961,6 +2126,15 @@ public class JCodeViewer extends JComponent implements Scrollable {
         if (lineNumbersVisible != installed) {
             scrollPane.setRowHeaderView(lineNumbersVisible ? gutter : null);
         }
+        if (stickyLinesVisible || stickyScrollMode) {
+            // copying what scrolls would copy the sticky lines along with it
+            int mode = stickyLinesVisible ? JViewport.SIMPLE_SCROLL_MODE : JViewport.BLIT_SCROLL_MODE;
+            scrollPane.getViewport().setScrollMode(mode);
+            if (scrollPane.getRowHeader() != null) {
+                scrollPane.getRowHeader().setScrollMode(mode);
+            }
+            stickyScrollMode = stickyLinesVisible;
+        }
     }
 
     // ---- Used by the gutter ----
@@ -1980,6 +2154,10 @@ public class JCodeViewer extends JComponent implements Scrollable {
 
     int lineHeight() {
         return lineHeight;
+    }
+
+    long layoutVersion() {
+        return layoutVersion;
     }
 
     int baseline() {
@@ -2044,6 +2222,7 @@ public class JCodeViewer extends JComponent implements Scrollable {
                 g.setColor(theme.foreground());
                 g.fillRect(caret.x, caret.y, caretWidth(), caret.height);
             }
+            paintStickyLines(g);
         } finally {
             g.dispose();
         }
@@ -2133,16 +2312,16 @@ public class JCodeViewer extends JComponent implements Scrollable {
         char[] text = readChars(lineStart + from, lineStart + to);
         int count = to - from;
 
-        if (highlights.length > 0) {
+        if (highlights.length > 0 && !paintingSticky) {
             paintTextHighlights(g, text, lineStart, length);
         }
-        if (search != null) {
+        if (search != null && !paintingSticky) {
             // On a line read only in part, a match cut by the edge of the view is not marked.
             int shift = from;
             g.setColor(theme.searchBackground());
             search.findInLine(text, count, (start, end) -> fillCells(g, text, start + shift, end + shift, false));
         }
-        if (bracketOffset >= 0) {
+        if (bracketOffset >= 0 && !paintingSticky) {
             g.setColor(theme.bracketMatchBackground());
             if (bracketOffset >= lineStart && bracketOffset < lineStart + length) {
                 fillCells(g, text, bracketOffset - lineStart, bracketOffset - lineStart + 1, false);
@@ -2153,7 +2332,7 @@ public class JCodeViewer extends JComponent implements Scrollable {
         }
         int selectionStart = getSelectionStart();
         int selectionEnd = getSelectionEnd();
-        if (selectionStart < selectionEnd && selectionEnd > lineStart && selectionStart <= lineStart + length) {
+        if (selectionStart < selectionEnd && selectionEnd > lineStart && selectionStart <= lineStart + length && !paintingSticky) {
             g.setColor(theme.selectionBackground());
             if (roundedSelection) {
                 paintRoundedRange(g, lineRow + spanRow0, lineRow + spanRow1, selectionStart, selectionEnd, SELECTION_RADIUS);
@@ -2173,7 +2352,7 @@ public class JCodeViewer extends JComponent implements Scrollable {
         } else {
             drawMeasured(g, text, count);
         }
-        if (markers.length > 0) {
+        if (markers.length > 0 && !paintingSticky) {
             paintMarkers(g, text, lineStart, length);
         }
     }
@@ -2549,6 +2728,12 @@ public class JCodeViewer extends JComponent implements Scrollable {
                     return;
                 }
                 requestFocusInWindow();
+                int sticky = stickyLineAt(e.getY());
+                if (sticky >= 0) {
+                    stickyPressed = true;
+                    goToStickyLine(sticky);
+                    return;
+                }
                 int collapsed = foldMarkerAt(e.getX(), e.getY());
                 if (collapsed >= 0) {
                     // a click on the mark of a collapsed fold shows its lines again
@@ -2570,15 +2755,27 @@ public class JCodeViewer extends JComponent implements Scrollable {
 
             @Override
             public void mouseMoved(MouseEvent e) {
-                int cursor = foldMarkerAt(e.getX(), e.getY()) >= 0 ? Cursor.HAND_CURSOR : Cursor.TEXT_CURSOR;
+                int sticky = stickyLineAt(e.getY());
+                setStickyHoverLine(sticky);
+                int cursor = sticky >= 0 || foldMarkerAt(e.getX(), e.getY()) >= 0 ? Cursor.HAND_CURSOR : Cursor.TEXT_CURSOR;
                 if (getCursor().getType() != cursor) {
                     setCursor(Cursor.getPredefinedCursor(cursor));
                 }
             }
 
             @Override
+            public void mouseExited(MouseEvent e) {
+                setStickyHoverLine(-1);
+            }
+
+            @Override
+            public void mouseReleased(MouseEvent e) {
+                stickyPressed = false;
+            }
+
+            @Override
             public void mouseDragged(MouseEvent e) {
-                if (!SwingUtilities.isLeftMouseButton(e)) {
+                if (!SwingUtilities.isLeftMouseButton(e) || stickyPressed) {
                     return;
                 }
                 select(selectionAnchor, offsetAt(e.getX(), e.getY()));

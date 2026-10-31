@@ -396,6 +396,7 @@ public class JCodeField extends JComponent {
             setRightPadding(CARET_ROOM);
             setLineNumbersVisible(false);
             setFoldingEnabled(false);
+            setStickyLinesVisible(false);
             setHighlightCurrentLine(false);
             setBracketMatching(false);
             // Tab is not typed: it goes on to the next component. The actions keep their names,
